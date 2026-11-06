@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스마트 산업안전보건 통합관제 대시보드 | Smart EHS Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --primary-light: #d1fae5;
+      --safety-yellow: #f59e0b;
+      --safety-red: #ef4444;
+      --safety-blue: #2563eb;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --border: #e2e8f0;
+      --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --card-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+      color: white;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand-icon {
+      font-size: 2rem;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.35rem 0.65rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .brand-title h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .brand-title p {
+      font-size: 0.8rem;
+      color: #a7f3d0;
+      margin-top: 0.1rem;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .site-select {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+    .site-select option {
+      background: #064e3b;
+      color: white;
+    }
+    .clock-badge {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn {
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+    .btn-emergency {
+      background: var(--safety-red);
+      color: white;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    }
+    .btn-emergency:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    main {
+      max-width: 1400px;
+      margin: 1.5rem auto;
+      padding: 0 1.25rem 2.5rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* Zero Accident Hero Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.75rem;
+      box-shadow: var(--card-shadow-lg);
+      border: 1px solid #334155;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .hero-banner {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+    }
+    .hero-left h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .hero-days-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin: 0.5rem 0 1rem;
+    }
+    .hero-days {
+      font-size: 4.2rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #34d399;
+      text-shadow: 0 0 25px rgba(52, 211, 153, 0.35);
+      font-feature-settings: "tnum";
+    }
+    .hero-days-unit {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .hero-days-sub {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+    .progress-bar-bg {
+      background: #334155;
+      border-radius: 9999px;
+      height: 12px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #10b981, #34d399);
+      height: 100%;
+      width: 78.1%;
+      border-radius: 9999px;
+      transition: width 1s ease-in-out;
+    }
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .hero-right {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .mini-status-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .mini-status-card .title {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 0.25rem;
+    }
+    .mini-status-card .val {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .mini-status-card .badge {
+      display: inline-block;
+      margin-top: 0.35rem;
+      font-size: 0.725rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      font-weight: 600;
+    }
+
+    /* KPI Cards Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-shadow-lg);
+    }
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary);
+    }
+    .kpi-card.yellow::before { background: var(--safety-yellow); }
+    .kpi-card.blue::before { background: var(--safety-blue); }
+    .kpi-card.red::before { background: var(--safety-red); }
+
+    .kpi-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .kpi-title {
+      font-size: 0.875rem;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+    .kpi-icon {
+      font-size: 1.25rem;
+    }
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 0.25rem 0;
+    }
+    .kpi-sub {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .kpi-tag {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* Nav Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+    }
+    .tab-btn {
+      padding: 0.75rem 1.25rem;
+      border: none;
+      background: transparent;
+      color: var(--text-sub);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .tab-btn:hover {
+      color: var(--primary);
+      background: rgba(5, 150, 105, 0.05);
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .tab-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* Tab Contents */
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid Layout for Charts */
+    .content-grid-2 {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 960px) {
+      .content-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--card-shadow);
+      margin-bottom: 1.5rem;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-subtitle {
+      font-size: 0.825rem;
+      color: var(--text-sub);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+
+    /* Risk Matrix 5x5 */
+    .risk-matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .risk-matrix-table th, .risk-matrix-table td {
+      border: 1px solid #cbd5e1;
+      padding: 0.6rem 0.4rem;
+      font-size: 0.8rem;
+    }
+    .risk-matrix-table th {
+      background: #f1f5f9;
+      font-weight: 600;
+    }
+    .cell-high { background: #fee2e2; color: #991b1b; font-weight: 700; }
+    .cell-mid { background: #fef3c7; color: #92400e; font-weight: 600; }
+    .cell-low { background: #dcfce7; color: #166534; }
+
+    /* Tables */
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+    .styled-table th {
+      background: #f8fafc;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      border-bottom: 2px solid var(--border);
+    }
+    .styled-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    .styled-table tr:hover td {
+      background: #f1f5f9;
+    }
+    .badge-status {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--text-main);
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    /* Checklist */
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 0.65rem;
+      background: #ffffff;
+      transition: background 0.15s;
+    }
+    .checklist-item:hover {
+      background: #f8fafc;
+    }
+    .checklist-item input[type="checkbox"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      accent-color: var(--primary);
+      cursor: pointer;
+      margin-top: 0.2rem;
+    }
+    .check-title {
+      font-weight: 600;
+      font-size: 0.925rem;
+    }
+    .check-desc {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: 0.2rem;
+    }
+
+    /* Emergency Grid */
+    .emergency-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .emergency-card {
+      border: 1px solid #fed7aa;
+      background: #fff7ed;
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .emergency-card.red-alert {
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+    .emergency-card h4 {
+      font-size: 1rem;
+      color: #9a3412;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .emergency-card.red-alert h4 {
+      color: #991b1b;
+    }
+    .emergency-phone {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #7c2d12;
+      letter-spacing: 0.05em;
+    }
+    .emergency-card.red-alert .emergency-phone {
+      color: #b91c1c;
+    }
+
+    /* Notification Banner */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #0f172a;
+      color: white;
+      padding: 0.9rem 1.4rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      border-top: 1px solid #1e293b;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">⛑️</div>
+        <div class="brand-title">
+          <h1>스마트 산업안전보건 통합관제 대시보드</h1>
+          <p>Smart EHS & Safety Management Control Portal</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <select class="site-select" id="siteSelect" onchange="onSiteChange(this.value)">
+          <option value="all">📍 전체 사업장 통합</option>
+          <option value="plant1">🏭 제1공장 (가공/프레스/사출)</option>
+          <option value="plant2">🔧 제2공장 (조립/도장/시험)</option>
+          <option value="logistics">📦 스마트 종합물류센터</option>
+        </select>
+        <div class="clock-badge" id="liveClock">2026-11-06 00:00:00</div>
+        <button class="btn btn-emergency" onclick="switchTab('tab-emergency')">
+          🚨 비상대응 핫라인
+        </button>
+        <button class="btn btn-outline" onclick="window.print()">
+          🖨️ 보고서 인쇄
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 무재해 달성 및 현황 전광판 -->
+    <section class="hero-banner">
+      <div class="hero-left">
+        <h2>
+          <span>🏆</span>
+          <span>무재해 목표 달성 운동 2배수 추진 사업장</span>
+        </h2>
+        <div class="hero-days-wrap">
+          <div class="hero-days" id="heroZeroDays">285</div>
+          <div>
+            <div class="hero-days-unit">일째 무재해 지속 중</div>
+            <div class="hero-days-sub">이전 무재해 최고 기록: 250일 (경신 달성)</div>
+          </div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="zeroProgressFill"></div>
+        </div>
+        <div class="progress-labels">
+          <span>시작일: 2025.01.25</span>
+          <span id="targetDaysLabel">목표: 365일 (달성률 78.1%)</span>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="mini-status-card">
+          <div class="title">사업장 안전상태 등급</div>
+          <div class="val" style="color: #34d399;">🟢 우수 (Green)</div>
+          <span class="badge">중대재해 Zero 유지</span>
+        </div>
+        <div class="mini-status-card">
+          <div class="title">금일 현장 작업 인원</div>
+          <div class="val" id="todayWorkers">342 명</div>
+          <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd;">TBM 100% 완료</span>
+        </div>
+        <div class="mini-status-card">
+          <div class="title">안전 순찰대 활동</div>
+          <div class="val" style="color: #facc15;">작업 순시 중</div>
+          <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fde68a;">2인 1조 상시순찰</span>
+        </div>
+        <div class="mini-status-card">
+          <div class="title">위험성평가 신속조치율</div>
+          <div class="val" id="riskRateMini">96.4%</div>
+          <span class="badge">129건 조치 완료</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 핵심 KPI 카드 4종 -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-title">도수율 (재해 발생률)</span>
+          <span class="kpi-icon">🛡️</span>
+        </div>
+        <div class="kpi-value" style="color: #059669;">0.00%</div>
+        <div class="kpi-sub">
+          <span class="kpi-tag">연간 누적 0건</span>
+          <span>(전년 동기 대비 -0.12% 감소)</span>
+        </div>
+      </div>
+
+      <div class="kpi-card yellow">
+        <div class="kpi-head">
+          <span class="kpi-title">위험성평가 개선 조치율</span>
+          <span class="kpi-icon">📋</span>
+        </div>
+        <div class="kpi-value" style="color: #d97706;" id="kpiRisk">96.4%</div>
+        <div class="kpi-sub">
+          <span class="kpi-tag" style="color: #d97706;">134건 중 129건 완료</span>
+          <span>(조치중 5건 진행)</span>
+        </div>
+      </div>
+
+      <div class="kpi-card blue">
+        <div class="kpi-head">
+          <span class="kpi-title">정기 안전보건 점검 이행률</span>
+          <span class="kpi-icon">🔍</span>
+        </div>
+        <div class="kpi-value" style="color: #2563eb;">98.2%</div>
+        <div class="kpi-sub">
+          <span class="kpi-tag" style="color: #2563eb;">정기/특별/일상점검</span>
+          <span>(의무 법정기준 100% 충족)</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-title">법정 안전보건교육 이수율</span>
+          <span class="kpi-icon">🎓</span>
+        </div>
+        <div class="kpi-value" style="color: #059669;">100%</div>
+        <div class="kpi-sub">
+          <span class="kpi-tag">전 임직원 이수완료</span>
+          <span>(정기+채용시+특별교육)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 탭 내비게이션 -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('tab-overview', this)">
+        📊 종합 모니터링 & 통계
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-report', this)">
+        📢 아차사고·위험요인 신속제보
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-matrix', this)">
+        ⚖️ 위험성평가 5×5 매트릭스
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-checklist', this)">
+        ✅ 일일 안전점검 체크리스트
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-emergency', this)">
+        🚨 비상대응 절차 및 비상연락망
+      </button>
+    </nav>
+
+    <!-- 탭 1: 종합 모니터링 & 통계 -->
+    <div id="tab-overview" class="tab-pane active">
+      <div class="content-grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📈 최근 6개월 안전사고 및 아차사고(Near-Miss) 추이</div>
+              <div class="card-subtitle">선제적 위험 발굴로 안전사고(중대재해) 발생 제로 유지</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🍩 현장 중점 위험유형 분포</div>
+              <div class="card-subtitle">제보 및 위험성평가 기반 6대 위험 분석</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="riskTypeChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 최근 등록된 아차사고 및 개선조치 내역 테이블 -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🔔 최근 현장 위험요인 발굴 및 선제 조치 내역</div>
+            <div class="card-subtitle">작업자 제보를 통해 조기 개선된 안전 활동 사례</div>
+          </div>
+          <button class="btn btn-outline" style="color: var(--primary); border-color: var(--primary);" onclick="switchTab('tab-report')">
+            + 새 위험요인 제보하기
+          </button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="styled-table" id="recentTable">
+            <thead>
+              <tr>
+                <th>발생일시</th>
+                <th>작업장소</th>
+                <th>위험 유형</th>
+                <th>긴급도</th>
+                <th>제보 내용</th>
+                <th>개선 조치 내용</th>
+                <th>조치 상태</th>
+              </tr>
+            </thead>
+            <tbody id="recentReportBody">
+              <!-- JS로 동적 생성 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 탭 2: 아차사고/위험요인 신속 제보 -->
+    <div id="tab-report" class="tab-pane">
+      <div class="content-grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">✍️ 작업장 위험요인 / 아차사고 즉시 제보</div>
+              <div class="card-subtitle">위험을 발견하면 즉시 등록해주세요. 현장 즉시 조치팀이 출동합니다.</div>
+            </div>
+          </div>
+          <form id="reportForm" onsubmit="submitReport(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>제보자 성명 / 직급</label>
+                <input type="text" id="repName" class="form-control" placeholder="예: 김안전 반장" required>
+              </div>
+              <div class="form-group">
+                <label>작업 공정 / 상세 위치</label>
+                <input type="text" id="repLocation" class="form-control" placeholder="예: 제1공장 프레스 라인 2번기" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>위험 유형 분류</label>
+                <select id="repType" class="form-control" required>
+                  <option value="끼임/협착 위험">끼임 / 협착 (기계 회전부, 프레스 등)</option>
+                  <option value="추락/낙하 위험">추락 / 낙하 (고소 작업, 안전난간 미비)</option>
+                  <option value="넘어짐/전도 위험">넘어짐 / 전도 (바닥 물기, 기름 누유, 통로 적재)</option>
+                  <option value="화학물질/가스">화학물질 / 독성 가스 / 환기 불량</option>
+                  <option value="감전/화재 위험">감전 / 화재 (전선 노후, 접지 불량)</option>
+                  <option value="중장비/지게차 충돌">중장비 / 지게차 충돌 위험</option>
+                  <option value="기타 유해위험요인">기타 유해위험요인</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>위험 긴급도</label>
+                <select id="repUrgency" class="form-control" required>
+                  <option value="보통">보통 (일반 개선 조치 필요)</option>
+                  <option value="높음">높음 (작업 전 즉각 개선 필요)</option>
+                  <option value="긴급">긴급 ⚠️ (즉시 작업중지 요망)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>발견된 위험 상세 내용</label>
+              <textarea id="repContent" class="form-control" rows="3" placeholder="위험 상황 및 사고 발생 가능성을 상세히 작성해주세요." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>권장 개선안 또는 임시 조치 사항 (선택)</label>
+              <input type="text" id="repAction" class="form-control" placeholder="예: 작업구역 라바콘 설치 및 안전커버 재고정 필요">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+              <button type="reset" class="btn" style="background: #e2e8f0; color: #475569;">초기화</button>
+              <button type="submit" class="btn" style="background: var(--primary); color: white;">
+                📨 위험요인 등록하기
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">💡 안전 제보 가이드라인 및 포상 제도</div>
+              <div class="card-subtitle">근로자의 1건의 제보가 중대재해를 예방합니다</div>
+            </div>
+          </div>
+          <div style="font-size: 0.9rem; line-height: 1.6; color: #334155;">
+            <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 0.9rem; border-radius: 6px; margin-bottom: 1rem;">
+              <strong>🛡️ 근로자 작업중지권 보장 안내</strong><br>
+              산업안전보건법 제52조에 따라 급박한 위험이 있을 시 누구나 즉시 작업을 중지하고 대피할 수 있으며, 이로 인한 불이익은 일체 없습니다.
+            </div>
+            <h4 style="margin-bottom: 0.5rem; color: #0f172a;">🎁 안전 우수제보 마일리지 포상</h4>
+            <ul style="margin-left: 1.25rem; margin-bottom: 1rem;">
+              <li>아차사고 1건 등록 시 <strong>안전 포인트 5,000P</strong> 지급</li>
+              <li>중대위험 선제 발굴 및 우수 개선안 채택 시 <strong>최대 10만원 상당 온누리상품권</strong></li>
+              <li>분기별 안전 우수 부서 포상 및 안전 챔피언 트로피 수여</li>
+            </ul>
+            <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 0.9rem; border-radius: 6px;">
+              <strong>📞 24시간 안전핫라인 직통:</strong> 02-123-4911
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 탭 3: 위험성평가 5x5 매트릭스 -->
+    <div id="tab-matrix" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">⚖️ 산업안전보건 위험성평가 (Risk Assessment) 5×5 매트릭스</div>
+            <div class="card-subtitle">발생가능성(빈도 1~5) × 중대성(강도 1~5) 산정 기준</div>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="risk-matrix-table">
+            <thead>
+              <tr>
+                <th rowspan="2" style="width: 120px;">빈도 (가능성)</th>
+                <th colspan="5">강도 (중대성 / 재해 결과)</th>
+              </tr>
+              <tr>
+                <th>1 (경미-응급처치)</th>
+                <th>2 (경상-3일이하휴업)</th>
+                <th>3 (중상-휴업재해)</th>
+                <th>4 (중대재해-장해)</th>
+                <th>5 (사망-다수사상)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>5 (매우 빈번)</th>
+                <td class="cell-mid">5 (중위험 - 3건)</td>
+                <td class="cell-high">10 (고위험 - 1건)</td>
+                <td class="cell-high">15 (위험 - 0건)</td>
+                <td class="cell-high">20 (극도위험 - 0건)</td>
+                <td class="cell-high">25 (작업불가 - 0건)</td>
+              </tr>
+              <tr>
+                <th>4 (자주 발생)</th>
+                <td class="cell-low">4 (저위험 - 8건)</td>
+                <td class="cell-mid">8 (중위험 - 4건)</td>
+                <td class="cell-high">12 (고위험 - 1건)</td>
+                <td class="cell-high">16 (극도위험 - 0건)</td>
+                <td class="cell-high">20 (작업불가 - 0건)</td>
+              </tr>
+              <tr>
+                <th>3 (가끔 발생)</th>
+                <td class="cell-low">3 (저위험 - 15건)</td>
+                <td class="cell-mid">6 (중위험 - 7건)</td>
+                <td class="cell-mid">9 (중위험 - 2건)</td>
+                <td class="cell-high">12 (고위험 - 0건)</td>
+                <td class="cell-high">15 (위험 - 0건)</td>
+              </tr>
+              <tr>
+                <th>2 (거의 없음)</th>
+                <td class="cell-low">2 (저위험 - 22건)</td>
+                <td class="cell-low">4 (저위험 - 18건)</td>
+                <td class="cell-mid">6 (중위험 - 5건)</td>
+                <td class="cell-mid">8 (중위험 - 1건)</td>
+                <td class="cell-high">10 (고위험 - 0건)</td>
+              </tr>
+              <tr>
+                <th>1 (극히 희박)</th>
+                <td class="cell-low">1 (안전 - 40건)</td>
+                <td class="cell-low">2 (저위험 - 25건)</td>
+                <td class="cell-low">3 (저위험 - 12건)</td>
+                <td class="cell-low">4 (저위험 - 4건)</td>
+                <td class="cell-mid">5 (중위험 - 0건)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.85rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="display:inline-block; width:16px; height:16px; background:#dcfce7; border:1px solid #86efac; border-radius:4px;"></span>
+            <span><strong>저위험 (1~4):</strong> 현재 관리 기준 유지 (총 144건)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="display:inline-block; width:16px; height:16px; background:#fef3c7; border:1px solid #fde047; border-radius:4px;"></span>
+            <span><strong>중위험 (5~9):</strong> 월간 집중 개선 및 안전표준 보완 (총 22건 - 20건 조치완료)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="display:inline-block; width:16px; height:16px; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px;"></span>
+            <span><strong>고위험 (10 이상):</strong> 즉시 개선 조치 및 작업허가제 적용 (총 2건 - 전담 개선반 가동 중)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 탭 4: 일일 안전점검 체크리스트 -->
+    <div id="tab-checklist" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">✅ 일일 10대 핵심 현장 안전수칙 자율점검표</div>
+            <div class="card-subtitle">공정 관리자 및 작업자가 매일 작업 개시 전 확인하는 필수 점검항목</div>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.85rem; color: var(--text-sub);">현재 점검 점수:</span>
+            <span id="checkScore" style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-left: 0.35rem;">100점</span>
+            <span id="checkGrade" class="badge-status badge-green" style="margin-left: 0.5rem;">적합 (A등급)</span>
+          </div>
+        </div>
+
+        <div id="checklistWrap">
+          <div class="checklist-item">
+            <input type="checkbox" id="chk1" checked onchange="calcChecklistScore()">
+            <label for="chk1">
+              <div class="check-title">1. 개인보호구(안전모, 안전화, 보안경, 안전대) 착용 상태 적정 여부</div>
+              <div class="check-desc">작업에 맞는 보호구를 올바르게 착용하고 턱끈을 체결하였는가?</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk2" checked onchange="calcChecklistScore()">
+            <label for="chk2">
+              <div class="check-title">2. 기계 회전체 방호덮개 및 인터록(안전센서) 정상 작동 여부</div>
+              <div class="check-desc">임의로 센서를 해제하거나 방호커버를 탈거한 상태로 가동하지 않는가?</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk3" checked onchange="calcChecklistScore()">
+            <label for="chk3">
+              <div class="check-title">3. 작업 통로 내 장애물 적치 및 미끄럼 위험 요인 제거 상태</div>
+              <div class="check-desc">통로 폭 확보, 바닥 기름/물기 청소, 비상통로 상시 개방 유지 여부</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk4" checked onchange="calcChecklistScore()">
+            <label for="chk4">
+              <div class="check-title">4. 소화기 비치 상태 및 비상유도등 점등 확인</div>
+              <div class="check-desc">압력게이지 정상 녹색 범위, 소화기 전면 적재물 차단 여부</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk5" checked onchange="calcChecklistScore()">
+            <label for="chk5">
+              <div class="check-title">5. 화학물질 취급 장소 MSDS(물질안전보건자료) 비치 및 경고표지 부착</div>
+              <div class="check-desc">용기 소분 시 경고표지 일치 여부, 세안설비 수압 정상 확인</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk6" checked onchange="calcChecklistScore()">
+            <label for="chk6">
+              <div class="check-title">6. 전기 분전함 차단기 접지선 접속 및 배선 피복 손상 여부</div>
+              <div class="check-desc">노출된 나선 없음, 분전함 앞 접근 차단 및 절연 상태 양호 여부</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk7" checked onchange="calcChecklistScore()">
+            <label for="chk7">
+              <div class="check-title">7. 고소 작업 시 안전난간 설치 및 2인 1조 작업 준수</div>
+              <div class="check-desc">2미터 이상 작업 시 이동식 비계 아웃트리거 체결 및 안전대 걸이 확인</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk8" checked onchange="calcChecklistScore()">
+            <label for="chk8">
+              <div class="check-title">8. 지게차 등 중장비 운행 전 일상점검 및 전담 유도자 배치</div>
+              <div class="check-desc">후진 경보기, 경광등 작동 확인 및 시속 10km 이하 제한속도 준수</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk9" checked onchange="calcChecklistScore()">
+            <label for="chk9">
+              <div class="check-title">9. 작업장 국소배기장치 및 환기설비 상시 가동 여부</div>
+              <div class="check-desc">유기용제 및 분진 포집 후드 정상 흡입 및 차압계 상태 확인</div>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="chk10" checked onchange="calcChecklistScore()">
+            <label for="chk10">
+              <div class="check-title">10. 작업 전 TBM(Tool Box Meeting, 10분 안전회의) 실시 여부</div>
+              <div class="check-desc">당일 작업 위험요소 공지, 작업자 건강상태(음주, 피로) 확인 완료</div>
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button class="btn btn-outline" style="color: var(--text-main); border-color: var(--border);" onclick="resetChecklist()">
+            점검항목 전체 선택
+          </button>
+          <button class="btn" style="background: var(--primary); color: white;" onclick="saveChecklistResult()">
+            💾 일일 안전점검 결과 저장
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 탭 5: 비상대응 절차 및 비상연락망 -->
+    <div id="tab-emergency" class="tab-pane">
+      <div class="card" style="border-left: 5px solid var(--safety-red);">
+        <div class="card-header">
+          <div>
+            <div class="card-title" style="color: #991b1b;">🚨 비상상황 시 4대 골든타임 행동요령</div>
+            <div class="card-subtitle">당황하지 말고 단계별 기본 수칙을 즉시 이행하십시오</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 700; color: #b91c1c; margin-bottom: 0.35rem;">1단계: 전파 및 작업중지</div>
+            <div style="font-size: 0.85rem; color: #334155;">
+              "불이야!", "사고발생!" 큰 소리로 주변에 외치고 비상벨을 작동하여 모든 작업을 즉시 중지시킵니다.
+            </div>
+          </div>
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 700; color: #ea580c; margin-bottom: 0.35rem;">2단계: 119 및 상황실 신속신고</div>
+            <div style="font-size: 0.85rem; color: #334155;">
+              정확한 위치(공장/라인명), 부상자 수, 부상 상태, 유해화학물질 종류를 침착하게 전달합니다.
+            </div>
+          </div>
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 700; color: #0284c7; margin-bottom: 0.35rem;">3단계: 긴급 응급구호 및 대피</div>
+            <div style="font-size: 0.85rem; color: #334155;">
+              심정지 시 AED(자동심장충격기) 및 CPR 즉시 시행, 화재 시 방화문 닫고 바람을 안고 외부 집결지로 이동.
+            </div>
+          </div>
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 700; color: #059669; margin-bottom: 0.35rem;">4단계: 현장 보존 및 보고</div>
+            <div style="font-size: 0.85rem; color: #334155;">
+              사고 원인 조사를 위해 2차 붕괴 위험이 없는 한 현장을 보존하고 안전총괄책임자에게 직통 보고.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📞 24시간 실시간 사내외 비상연락망</div>
+            <div class="card-subtitle">긴급 상황 발생 시 클릭하여 즉시 통화 연결이 가능합니다</div>
+          </div>
+        </div>
+
+        <div class="emergency-grid" id="emergencyGrid">
+          <!-- JS로 동적 생성 -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toastMsg">알림 메시지</div>
+
+  <footer>
+    <p>스마트 산업안전보건 통합관제 시스템 (Smart EHS Portal) | 산업안전보건법 및 중대재해처벌법 대응 표준 시스템</p>
+    <p style="margin-top: 0.35rem; color: #64748b;">Powered by Python Standard Web Architecture | Auto Refresh Interval: 30s</p>
+  </footer>
+
+  <script>
+    let appData = null;
+    let monthlyChart = null;
+    let riskChart = null;
+
+    // 시계 업데이트
+    function updateClock() {
+      const now = new Date();
+      const str = now.getFullYear() + "-" +
+        String(now.getMonth() + 1).padStart(2, '0') + "-" +
+        String(now.getDate()).padStart(2, '0') + " " +
+        String(now.getHours()).padStart(2, '0') + ":" +
+        String(now.getMinutes()).padStart(2, '0') + ":" +
+        String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('liveClock').innerText = str;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 토스트 알림
+    function showToast(msg) {
+      const t = document.getElementById('toastMsg');
+      t.innerText = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // 탭 전환
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+
+      if (el) {
+        el.classList.add('active');
+      } else {
+        const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(tabId));
+        if (btn) btn.classList.add('active');
+      }
+    }
+
+    // 데이터 가져오기
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/data');
+        if (!res.ok) throw new Error('Network error');
+        appData = await res.json();
+        renderDashboard();
+      } catch (e) {
+        console.error('Fetch error:', e);
+      }
+    }
+
+    // 대시보드 렌더링
+    function renderDashboard() {
+      if (!appData) return;
+
+      // 무재해 일수
+      document.getElementById('heroZeroDays').innerText = appData.site_info.zero_accident_days;
+      const targetDays = appData.site_info.target_days;
+      const pct = Math.min(100, (appData.site_info.zero_accident_days / targetDays) * 100).toFixed(1);
+      document.getElementById('zeroProgressFill').style.width = pct + '%';
+      document.getElementById('targetDaysLabel').innerText = `목표: ${targetDays}일 (달성률 ${pct}%)`;
+      document.getElementById('todayWorkers').innerText = appData.site_info.workers_today + ' 명';
+      document.getElementById('riskRateMini').innerText = appData.kpis.risk_action_rate.value;
+      document.getElementById('kpiRisk').innerText = appData.kpis.risk_action_rate.value;
+
+      // 차트 렌더링
+      renderCharts();
+
+      // 최근 제보 리스트
+      renderReportTable();
+
+      // 비상연락망
+      renderEmergencyCards();
+    }
+
+    // 차트 생성/갱신
+    function renderCharts() {
+      if (typeof Chart === 'undefined') {
+        console.warn('Chart.js not loaded, fallback will be used');
+        return;
+      }
+
+      // 월별 추이 차트
+      const ctxMonthly = document.getElementById('monthlyChart');
+      if (ctxMonthly && appData.monthly_stats) {
+        if (monthlyChart) monthlyChart.destroy();
+        monthlyChart = new Chart(ctxMonthly, {
+          type: 'bar',
+          data: {
+            labels: appData.monthly_stats.labels,
+            datasets: [
+              {
+                label: '안전사고(인명재해)',
+                data: appData.monthly_stats.accidents,
+                backgroundColor: '#ef4444',
+                borderRadius: 6
+              },
+              {
+                label: '아차사고(Near-Miss) 발굴',
+                data: appData.monthly_stats.near_misses,
+                backgroundColor: '#f59e0b',
+                borderRadius: 6
+              },
+              {
+                label: '근로자 안전제안 건수',
+                data: appData.monthly_stats.safety_suggestions,
+                type: 'line',
+                borderColor: '#10b981',
+                backgroundColor: '#10b981',
+                borderWidth: 3,
+                tension: 0.35,
+                pointRadius: 5
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 14, font: { weight: 600 } } }
+            },
+            scales: {
+              y: { beginAtZero: true, ticks: { stepSize: 5 } }
+            }
+          }
+        });
+      }
+
+      // 위험 유형 도넛 차트
+      const ctxRisk = document.getElementById('riskTypeChart');
+      if (ctxRisk && appData.risk_types) {
+        if (riskChart) riskChart.destroy();
+        riskChart = new Chart(ctxRisk, {
+          type: 'doughnut',
+          data: {
+            labels: appData.risk_types.map(t => t.name),
+            datasets: [{
+              data: appData.risk_types.map(t => t.count),
+              backgroundColor: appData.risk_types.map(t => t.color),
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'right', labels: { boxWidth: 14, font: { size: 12 } } }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+    }
+
+    // 제보 목록 렌더링
+    function renderReportTable() {
+      const tbody = document.getElementById('recentReportBody');
+      if (!tbody || !appData.near_miss_reports) return;
+
+      tbody.innerHTML = appData.near_miss_reports.map(r => {
+        let badgeClass = 'badge-green';
+        if (r.urgency === '긴급') badgeClass = 'badge-red';
+        else if (r.urgency === '높음') badgeClass = 'badge-yellow';
+
+        return `
+          <tr>
+            <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-sub);">${r.date}</td>
+            <td style="font-weight: 600;">${r.location}</td>
+            <td><span class="badge-status badge-yellow">${r.type}</span></td>
+            <td><span class="badge-status ${badgeClass}">${r.urgency}</span></td>
+            <td>${r.content}</td>
+            <td style="color: #059669; font-weight: 500;">${r.action || '원인 분석 및 개선 조치 중'}</td>
+            <td><span class="badge-status badge-green">${r.status || '조치완료'}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 비상연락처 렌더링
+    function renderEmergencyCards() {
+      const grid = document.getElementById('emergencyGrid');
+      if (!grid || !appData.emergency_contacts) return;
+
+      grid.innerHTML = appData.emergency_contacts.map(c => {
+        const isRed = c.tel === '119' || c.role.includes('총괄');
+        return `
+          <div class="emergency-card ${isRed ? 'red-alert' : ''}">
+            <h4><span>${isRed ? '🚨' : '🏢'}</span> ${c.role}</h4>
+            <div style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">${c.name} (내선 ${c.ext})</div>
+            <div class="emergency-phone">
+              <a href="tel:${c.tel}" style="color: inherit; text-decoration: none;">📞 ${c.tel}</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 신규 위험요인 제보 제출
+    async function submitReport(e) {
+      e.preventDefault();
+      const reporter = document.getElementById('repName').value.trim();
+      const location = document.getElementById('repLocation').value.trim();
+      const type = document.getElementById('repType').value;
+      const urgency = document.getElementById('repUrgency').value;
+      const content = document.getElementById('repContent').value.trim();
+      const action = document.getElementById('repAction').value.trim();
+
+      const newReport = {
+        reporter,
+        location,
+        type,
+        urgency,
+        content,
+        action: action || "현장 안전순찰팀 출동 및 안전조치 접수 완료",
+        status: urgency === '긴급' ? '🚨 긴급출동 조치중' : '접수완료 (조치중)'
+      };
+
+      try {
+        const res = await fetch('/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newReport)
+        });
+        const resData = await res.json();
+        if (resData.success) {
+          showToast('✅ 위험요인이 성공적으로 접수되었습니다. 즉시 안전팀에 전파됩니다.');
+          document.getElementById('reportForm').reset();
+          await fetchData();
+          switchTab('tab-overview');
+        } else {
+          showToast('❌ 등록 실패: ' + resData.error);
+        }
+      } catch (err) {
+        showToast('❌ 네트워크 오류가 발생했습니다.');
+      }
+    }
+
+    // 체크리스트 점수 계산
+    function calcChecklistScore() {
+      const checkboxes = document.querySelectorAll('#checklistWrap input[type="checkbox"]');
+      let checkedCount = 0;
+      checkboxes.forEach(cb => { if (cb.checked) checkedCount++; });
+      const score = checkedCount * 10;
+      
+      const scoreEl = document.getElementById('checkScore');
+      const gradeEl = document.getElementById('checkGrade');
+      scoreEl.innerText = score + '점';
+
+      if (score >= 90) {
+        scoreEl.style.color = '#059669';
+        gradeEl.className = 'badge-status badge-green';
+        gradeEl.innerText = '적합 (A등급 - 매우 우수)';
+      } else if (score >= 70) {
+        scoreEl.style.color = '#d97706';
+        gradeEl.className = 'badge-status badge-yellow';
+        gradeEl.innerText = '보통 (B등급 - 즉시 보완)';
+      } else {
+        scoreEl.style.color = '#dc2626';
+        gradeEl.className = 'badge-status badge-red';
+        gradeEl.innerText = '위험 (C등급 - 작업중지 필요)';
+      }
+    }
+
+    function resetChecklist() {
+      document.querySelectorAll('#checklistWrap input[type="checkbox"]').forEach(cb => cb.checked = true);
+      calcChecklistScore();
+      showToast('체크리스트가 모두 정상으로 체크되었습니다.');
+    }
+
+    function saveChecklistResult() {
+      const score = document.getElementById('checkScore').innerText;
+      const grade = document.getElementById('checkGrade').innerText;
+      showToast(`💾 [안전점검 완료] 판정: ${grade} (${score}) 결과가 기록되었습니다.`);
+    }
+
+    function onSiteChange(site) {
+      showToast(`사업장이 변경되었습니다: ${site.toUpperCase()}`);
+    }
+
+    // 초기 실행
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchData();
+      calcChecklistScore();
+    });
+  </script>
+</body>
+</html>
+
