@@ -1193,16 +1193,100 @@
       }
     }
 
-    // 데이터 가져오기
+    // 데이터 가져오기 (GitHub Pages 정적 호스팅 및 로컬 서버 모두 호환)
     async function fetchData() {
       try {
-        const res = await fetch('/api/data');
-        if (!res.ok) throw new Error('Network error');
-        appData = await res.json();
+        let res = null;
+        try {
+          res = await fetch('/api/data');
+        } catch (err) {}
+
+        if (!res || !res.ok) {
+          // GitHub Pages 환경에서는 동일 경로의 safety_data.json 직접 호출
+          res = await fetch('./safety_data.json');
+        }
+
+        if (res && res.ok) {
+          appData = await res.json();
+        } else {
+          throw new Error('Data fetch failed');
+        }
+        
+        // localStorage에 저장된 제보가 있다면 병합
+        const localReports = JSON.parse(localStorage.getItem('user_safety_reports') || '[]');
+        if (localReports.length > 0 && appData.near_miss_reports) {
+          appData.near_miss_reports = [...localReports, ...appData.near_miss_reports];
+        }
+
         renderDashboard();
       } catch (e) {
-        console.error('Fetch error:', e);
+        console.warn('Fallback to embedded default data:', e);
+        loadDefaultFallbackData();
       }
+    }
+
+    function loadDefaultFallbackData() {
+      appData = {
+        site_info: {
+          company_name: "스마트 스마트안전보건 관제센터",
+          current_site: "전체 사업장 (제1공장, 제2공장, 물류센터)",
+          zero_accident_days: 285,
+          target_days: 365,
+          safety_level: "우수 (Green)",
+          workers_today: 342
+        },
+        kpis: {
+          accident_rate: { value: "0.00%", diff: "-0.12%", status: "good" },
+          risk_action_rate: { value: "96.4%", diff: "+2.1%", status: "good" },
+          inspection_rate: { value: "98.2%", diff: "+0.5%", status: "good" },
+          training_rate: { value: "100%", diff: "0.0%", status: "good" }
+        },
+        monthly_stats: {
+          labels: ["6월", "7월", "8월", "9월", "10월", "11월"],
+          accidents: [0, 0, 0, 0, 0, 0],
+          near_misses: [4, 6, 3, 5, 2, 1],
+          safety_suggestions: [12, 15, 18, 22, 19, 14]
+        },
+        risk_types: [
+          { name: "끼임/협착", count: 14, color: "#ef4444" },
+          { name: "추락/낙하", count: 10, color: "#f97316" },
+          { name: "넘어짐/전도", count: 9, color: "#f59e0b" },
+          { name: "화학물질/가스", count: 7, color: "#3b82f6" },
+          { name: "근골격계/과부하", count: 6, color: "#10b981" },
+          { name: "감전/화재", count: 4, color: "#8b5cf6" }
+        ],
+        near_miss_reports: [
+          {
+            id: 1,
+            date: "2026-11-05 14:20",
+            location: "제1가공동 프레스 라인 3번기",
+            type: "끼임/협착 위험",
+            urgency: "높음",
+            status: "조치완료",
+            content: "방호 센서 반응 딜레이 감지되어 즉시 인터록 정밀 점검 및 부품 교체 완료",
+            action: "센서 신품 교체 및 작업 전 인터록 점검 항목 추가"
+          },
+          {
+            id: 2,
+            date: "2026-11-04 10:15",
+            location: "중앙 물류창고 2구역 통로",
+            type: "넘어짐/전도 위험",
+            urgency: "보통",
+            status: "조치완료",
+            content: "지게차 이동 통로 바닥에 오일 누유 흔적으로 인한 미끄럼 위험 발견",
+            action: "유흡착재 배포 및 즉시 세척 작업 완료, 지게차 패킹 점검"
+          }
+        ],
+        emergency_contacts: [
+          { role: "안전총괄책임자 (공장장)", name: "홍길동 상무", tel: "010-1234-5678", ext: "1001" },
+          { role: "안전관리자 (사내)", name: "김안전 과장", tel: "010-2345-6789", ext: "1004" },
+          { role: "보건관리자 (간호사)", name: "이보건 대리", tel: "010-3456-7890", ext: "1007" },
+          { role: "사내 방재센터/상황실", name: "24시간 종합관제실", tel: "02-123-4911", ext: "4911" },
+          { role: "관할 소방서 / 응급구조", name: "119 소방안전센터", tel: "119", ext: "119" },
+          { role: "지정 병원 응급의료센터", name: "한국산업안전 종합병원", tel: "02-987-6543", ext: "응급실" }
+        ]
+      };
+      renderDashboard();
     }
 
     // 대시보드 렌더링
@@ -1363,6 +1447,8 @@
       const action = document.getElementById('repAction').value.trim();
 
       const newReport = {
+        id: Date.now(),
+        date: new Date().toISOString().slice(0, 16).replace('T', ' '),
         reporter,
         location,
         type,
@@ -1378,18 +1464,26 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newReport)
         });
-        const resData = await res.json();
-        if (resData.success) {
+        if (res.ok) {
           showToast('✅ 위험요인이 성공적으로 접수되었습니다. 즉시 안전팀에 전파됩니다.');
           document.getElementById('reportForm').reset();
           await fetchData();
           switchTab('tab-overview');
-        } else {
-          showToast('❌ 등록 실패: ' + resData.error);
+          return;
         }
-      } catch (err) {
-        showToast('❌ 네트워크 오류가 발생했습니다.');
-      }
+      } catch (err) {}
+
+      // GitHub Pages 정적 호스팅 fallback (로컬스토리지 저장)
+      const existing = JSON.parse(localStorage.getItem('user_safety_reports') || '[]');
+      existing.unshift(newReport);
+      localStorage.setItem('user_safety_reports', JSON.stringify(existing));
+      if (!appData.near_miss_reports) appData.near_miss_reports = [];
+      appData.near_miss_reports.unshift(newReport);
+      
+      showToast('✅ 위험요인이 접수되었습니다! 대시보드에 즉시 반영되었습니다.');
+      document.getElementById('reportForm').reset();
+      renderReportTable();
+      switchTab('tab-overview');
     }
 
     // 체크리스트 점수 계산
