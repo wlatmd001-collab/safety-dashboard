@@ -1,195 +1,343 @@
 {
-  "site_info": {
-    "company_name": "스마트 스마트안전보건 관제센터",
-    "current_site": "전체 사업장 (제1공장, 제2공장, 물류센터)",
-    "zero_accident_days": 285,
-    "target_days": 365,
-    "target_multiplier": "2배 달성 도전 중",
-    "last_accident_date": "2025-01-25",
-    "safety_level": "우수 (Green)",
-    "workers_today": 342,
-    "safety_patrol_active": true
-  },
-  "kpis": {
-    "accident_rate": {
-      "value": "0.00%",
-      "diff": "-0.12%",
-      "status": "good",
-      "label": "도수율 (재해율)"
-    },
-    "risk_action_rate": {
-      "value": "96.4%",
-      "diff": "+2.1%",
-      "status": "good",
-      "label": "위험성평가 조치율"
-    },
-    "inspection_rate": {
-      "value": "98.2%",
-      "diff": "+0.5%",
-      "status": "good",
-      "label": "정기 안전점검 이행률"
-    },
-    "training_rate": {
-      "value": "100%",
-      "diff": "0.0%",
-      "status": "good",
-      "label": "법정 안전보건교육 이수율"
-    }
-  },
-  "monthly_stats": {
-    "labels": [
-      "6월",
-      "7월",
-      "8월",
-      "9월",
-      "10월",
-      "11월"
-    ],
-    "accidents": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "near_misses": [
-      4,
-      6,
-      3,
-      5,
-      2,
-      1
-    ],
-    "safety_suggestions": [
-      12,
-      15,
-      18,
-      22,
-      19,
-      14
-    ]
-  },
-  "risk_types": [
+  "current_site_id": "site-1",
+  "sites": [
     {
-      "name": "끼임/협착",
-      "count": 14,
-      "percentage": 28,
-      "color": "#ef4444"
+      "id": "site-1",
+      "name": "삼성전자(삼성물산) 평택 P5 FAB1 Ph1 System Ceiling",
+      "short_name": "평택 P5 FAB1",
+      "company": "(주)신성이엔지 하이테크안전팀",
+      "client": "삼성전자",
+      "main_contractor": "삼성물산",
+      "contract_name": "SYSTEM CEILING 설치·철거 공사",
+      "main_process": "System Ceiling",
+      "period": "2026.07.15 ~ 2027.09.30",
+      "location": "경기도 평택시",
+      "contract_no": "2026-5-0339",
+      "contract_amount": "23,557,600,000원",
+      "site_manager": "조준영 차장",
+      "safety_inspectors": "김장성 이사, 이경희 대리",
+      "last_inspect_date": "2026-11-03",
+      "progress": "매립 INSERT 47%",
+      "progress_detail": "1F 63% · 2F 72% · 3F 0% · 5F 62% · 8F 16% / 1F EDS출하장 S/C 18%",
+      "workers_total": 73,
+      "workers_mgmt": 23,
+      "workers_tech": 50,
+      "workers_detail": "[설비] 관리 20명(직12/현8), 기술인 43명 / [전기제어] 관리 3명, 기술인 7명",
+      "inspection_rounds": [
+        { "round": "1차", "date": "2026-09-29", "inspector": "김장성 이사·이정원 대리", "progress": "29%", "workers": "18명 / 13명", "risk_count": 8, "high_risk": 5, "rate": 75.0 },
+        { "round": "2차", "date": "2026-10-22", "inspector": "김장성 이사·이경희 대리", "progress": "42%", "workers": "20명 / 35명", "risk_count": 10, "high_risk": 7, "rate": 80.0 },
+        { "round": "3차", "date": "2026-11-03", "inspector": "김장성 이사·이경희 대리", "progress": "47%", "workers": "23명 / 50명", "risk_count": 11, "high_risk": 4, "rate": 81.8 }
+      ],
+      "risk_items": [
+        {
+          "id": 1,
+          "date": "11월 3일",
+          "location": "샵장 (M8 로드 절단)",
+          "danger_point": "[베임] M8 로드 절단 시 전용 작업대 미사용·재단 자재 미고정으로 베임 위험 [RA 506·517] (전회 지적)",
+          "level": "중",
+          "measure": "재단할 전산볼트 고정, 밴드쏘 지면 고정 후 전용 작업대에서 절단 ▶ 점검: 10.22 지적사항 전용 작업대 사용 이행 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "베임"
+        },
+        {
+          "id": 2,
+          "date": "11월 3일",
+          "location": "샵장 (자재 운반)",
+          "danger_point": "[전도] 대차 자재 미결속으로 운반 중 자재 전도·낙하 위험 [RA 34] (전회 지적)",
+          "level": "중",
+          "measure": "대차 적재 자재 라쳇바 2점 이상 결속 ▶ 점검: 라쳇바 결속 이행 확인, 동일 지적 재발 없음",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "전도"
+        },
+        {
+          "id": 3,
+          "date": "11월 3일",
+          "location": "HPL (T/L 탑승)",
+          "danger_point": "[추락] T/L 탑승 후 안전대 부착설비·안전고리 미체결로 떨어짐 위험 [RA 383 ★★★]",
+          "level": "상",
+          "measure": "T/L 탑승 후 안전대 부착설비에 안전고리 체결, 전산볼트 안전고리 체결 지그 사용 ▶ 점검: 체결 상태 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "추락"
+        },
+        {
+          "id": 4,
+          "date": "11월 3일",
+          "location": "장비 작업장",
+          "danger_point": "[충돌] 장비 작업장 구획·출입통제 미흡, 유도자 미배치, 비지정자 운전으로 부딪힘 위험 [RA 372~374 ★★★]",
+          "level": "상",
+          "measure": "장비 작업장 구획·출입통제, 유도자 배치, 지정된 운전자만 운전 ▶ 점검: 구획·통제 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "충돌"
+        },
+        {
+          "id": 5,
+          "date": "11월 3일",
+          "location": "분전반 (충전)",
+          "danger_point": "[화재] 충전 시 분전반에 멀티탭 2개 이상 연결로 인한 화재 위험 [RA 370·521 ★★★]",
+          "level": "상",
+          "measure": "충전 시 분전반에 멀티탭 2개 이상 연결 금지 ▶ 점검: 멀티탭 연결 상태 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "기타"
+        },
+        {
+          "id": 6,
+          "date": "11월 3일",
+          "location": "공도구 사용 작업구간",
+          "danger_point": "[낙하] 공도구 낙하방지끈 미체결, 달줄·인양주머니 미사용으로 맞음 위험 [RA 200 ★★★]",
+          "level": "상",
+          "measure": "공도구 낙하방지끈 체결, 달줄 또는 인양주머니 사용 ▶ 점검: 사용 상태 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "낙하"
+        },
+        {
+          "id": 7,
+          "date": "11월 3일",
+          "location": "1F S/C 모듈 (M16 설치)",
+          "danger_point": "[낙하] M16 설치 시 하부로 자재·볼트 낙하에 의한 맞음 위험 [RA 358]",
+          "level": "중",
+          "measure": "바닥 보양, 작업구역 구획, 하부 통제원 배치 ▶ 점검: 하부 낙하 대책 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "낙하"
+        },
+        {
+          "id": 8,
+          "date": "11월 3일",
+          "location": "HPL (T/L 작업)",
+          "danger_point": "[추락] T/L 과상승방지장치 임의 해체, 중간발판 2인 작업, 난간 밖 몸 내밀기 [RA 375~380]",
+          "level": "중",
+          "measure": "과상승방지장치 해체 금지, 중간발판 2인작업 금지, 난간 밖 돌출 금지 ▶ 점검: 준수 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "추락"
+        },
+        {
+          "id": 9,
+          "date": "11월 3일",
+          "location": "1F N37열 (HPL 연결발판)",
+          "danger_point": "[충돌] HPL 연결발판이 스마트펜스 구역 외부로 돌출되어 근로자 머리 부딪힘 위험",
+          "level": "하",
+          "measure": "스마트펜스 구역 재설정, 연결발판 구역 내부로 정리 ▶ 점검: 연결발판 돌출 → 현장 즉시 시정 완료",
+          "result": "즉시 이행",
+          "action_type": "즉시조치",
+          "hazard_type": "충돌"
+        },
+        {
+          "id": 10,
+          "date": "11월 3일",
+          "location": "샵장 (중량물 보관)",
+          "danger_point": "[기타] 샵장 보관 중량물 취급주의 미흡 [RA 118]",
+          "level": "중",
+          "measure": "샵장 보관 중량물 취급주의 보완 ▶ 점검: 보완 필요 → 추후 개선결과 확인",
+          "result": "개선 필요",
+          "action_type": "추후확인",
+          "hazard_type": "기타"
+        },
+        {
+          "id": 11,
+          "date": "11월 3일",
+          "location": "HPL (단부 말비계)",
+          "danger_point": "[추락] HPL 단부구간 말비계 작업 시 안전고리 미체결로 떨어짐 위험 [RA 756]",
+          "level": "중",
+          "measure": "HPL 단부 말비계 작업 시 개인생명줄에 안전고리 교차 체결 ▶ 점검: 체결 이행 확인",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "추락"
+        }
+      ],
+      "before_after_photos": [
+        {
+          "id": 1,
+          "location": "1F N37열 HPL 연결발판 / 샵장",
+          "risk": "[충돌] HPL 연결발판 스마트펜스 외부 돌출로 머리 부딪힘 위험",
+          "direction": "스마트펜스 구역 재설정, 연결발판 구역 내부로 정리 (즉시 시정)",
+          "before_caption": "개선 전: 연결발판 구역 외부 돌출 상태",
+          "after_caption": "개선 후: 스마트펜스 구역 재설정 완료",
+          "status": "시정 완료 (11.03)"
+        },
+        {
+          "id": 2,
+          "location": "샵장 중량물 보관 구역",
+          "risk": "[기타] 샵장 보관 중량물 취급주의 보완 필요 (RA 118)",
+          "direction": "중량물 취급주의 표지 부착 및 적재 안정화",
+          "before_caption": "개선 전: 중량물 취급주의 미흡",
+          "after_caption": "개선 후: 경고표지 및 정리 보완 예정",
+          "status": "추후 개선결과 확인"
+        },
+        {
+          "id": 3,
+          "location": "샵장 대차 운반",
+          "risk": "[전도] 대차 적재 자재 라쳇바 미결속으로 전도·낙하 위험",
+          "direction": "대차 적재 자재 라쳇바 2점 이상 결속 운반",
+          "before_caption": "전회 지적: 라쳇바 미체결",
+          "after_caption": "이행 확인: 라쳇바 2점 결속 완료",
+          "status": "이행 확인 (11.03)"
+        }
+      ],
+      "summary_opinion": {
+        "tbm": "TBM(리더 강대일, 1F N52열): 상호 인사·구호, 보호구 확인, 비상대피로(박경권 반장 C58열, 박지서 비상연락망). 파이프 이동, HPL 지원. T/L 탑승 즉시 안전고리 체결 필수.",
+        "notice": "전동킥보드 사고사례 공유 및 근로자 작업중지권 상시 보장 안내.",
+        "eval": "위험성평가 11건 점검 중 이행 9건, 개선필요 2건(이행률 81.8%). 전회 지적(M8 로드 전용작업대, 대차 라쳇바 결속) 이행 양호 확인.",
+        "action_plan": "① 1F N37열 HPL 연결발판 스마트펜스 내부 정리 시정완료 ② 샵장 중량물 취급주의 보완 결과 차회 확인."
+      }
     },
     {
-      "name": "추락/낙하",
-      "count": 10,
-      "percentage": 20,
-      "color": "#f97316"
+      "id": "site-2",
+      "name": "삼성전자 평택 P4 복합동 마감공사",
+      "short_name": "평택 P4 복합동",
+      "company": "(주)신성이엔지 하이테크안전팀",
+      "client": "삼성전자",
+      "main_contractor": "삼성물산",
+      "contract_name": "클린룸 내장 및 실링 마감공사",
+      "main_process": "Cleanroom Ceiling",
+      "period": "2026.03.01 ~ 2027.05.31",
+      "location": "경기도 평택시",
+      "contract_no": "2026-4-0112",
+      "contract_amount": "18,400,000,000원",
+      "site_manager": "이안전 부장",
+      "safety_inspectors": "김장성 이사, 박민호 과장",
+      "last_inspect_date": "2026-11-04",
+      "progress": "판넬 설치 78%",
+      "progress_detail": "2F 85% · 3F 72%",
+      "workers_total": 58,
+      "workers_mgmt": 15,
+      "workers_tech": 43,
+      "workers_detail": "관리자 15명 / 기술인 43명",
+      "inspection_rounds": [
+        { "round": "1차", "date": "2026-10-10", "inspector": "김장성 이사", "progress": "65%", "workers": "14명 / 38명", "risk_count": 8, "high_risk": 3, "rate": 87.5 },
+        { "round": "2차", "date": "2026-10-24", "inspector": "김장성 이사", "progress": "72%", "workers": "15명 / 40명", "risk_count": 7, "high_risk": 2, "rate": 85.7 },
+        { "round": "3차", "date": "2026-11-04", "inspector": "김장성 이사", "progress": "78%", "workers": "15명 / 43명", "risk_count": 6, "high_risk": 1, "rate": 100.0 }
+      ],
+      "risk_items": [
+        {
+          "id": 1,
+          "date": "11월 4일",
+          "location": "2F 천장 작업구역",
+          "danger_point": "[추락] 고소작업대 탑승자 안전대 체결 여부",
+          "level": "상",
+          "measure": "상부 생명줄에 안전고리 2중 체결",
+          "result": "이행 완료",
+          "action_type": "정상조치",
+          "hazard_type": "추락"
+        }
+      ],
+      "before_after_photos": [],
+      "summary_opinion": {
+        "tbm": "2F 작업통로 앞 TBM 실시 완료.",
+        "notice": "동절기 화재 예방 및 소화기 점검 철저.",
+        "eval": "지적사항 6건 모두 이행 완료로 안전관리 상태 매우 우수.",
+        "action_plan": "지속적인 순찰 및 안전수칙 준수 유지."
+      }
     },
     {
-      "name": "넘어짐/전도",
-      "count": 9,
-      "percentage": 18,
-      "color": "#f59e0b"
+      "id": "site-3",
+      "name": "삼성전자 기흥 NRD-K FAB 공사",
+      "short_name": "기흥 NRD-K",
+      "company": "(주)신성이엔지 하이테크안전팀",
+      "client": "삼성전자",
+      "main_contractor": "삼성물산",
+      "contract_name": "NRD-K 시스템실링 패키지",
+      "main_process": "System Ceiling",
+      "period": "2026.05.01 ~ 2027.12.31",
+      "location": "경기도 용인시 기흥구",
+      "contract_no": "2026-6-0887",
+      "contract_amount": "31,200,000,000원",
+      "site_manager": "박희준 부장",
+      "safety_inspectors": "김장성 이사, 최영수 대리",
+      "last_inspect_date": "2026-11-01",
+      "progress": "골조 INSERT 35%",
+      "progress_detail": "B1 50% · 1F 20%",
+      "workers_total": 82,
+      "workers_mgmt": 25,
+      "workers_tech": 57,
+      "workers_detail": "관리자 25명 / 기술인 57명",
+      "inspection_rounds": [
+        { "round": "1차", "date": "2026-10-15", "inspector": "김장성 이사", "progress": "25%", "workers": "20명 / 45명", "risk_count": 12, "high_risk": 6, "rate": 75.0 },
+        { "round": "2차", "date": "2026-11-01", "inspector": "김장성 이사", "progress": "35%", "workers": "25명 / 57명", "risk_count": 9, "high_risk": 3, "rate": 77.8 }
+      ],
+      "risk_items": [],
+      "before_after_photos": [],
+      "summary_opinion": {
+        "tbm": "지하 1층 TBM 실시 및 산소농도 측정 완료.",
+        "notice": "밀폐공간 보건작업허가서 확인 철저.",
+        "eval": "초기 골조공정 진입에 따른 추락방지 시설 보강 집중 지도.",
+        "action_plan": "개구부 덮개 및 안전난간 임의탈거 금지 집중 단속."
+      }
     },
     {
-      "name": "화학물질/가스",
-      "count": 7,
-      "percentage": 14,
-      "color": "#3b82f6"
+      "id": "site-4",
+      "name": "삼성전자 화성 V1 클린룸 설비공사",
+      "short_name": "화성 V1 라인",
+      "company": "(주)신성이엔지 하이테크안전팀",
+      "client": "삼성전자",
+      "main_contractor": "삼성엔지니어링",
+      "contract_name": "클린룸 덕트 및 실링 공사",
+      "main_process": "Duct / Ceiling",
+      "period": "2026.01.10 ~ 2026.12.31",
+      "location": "경기도 화성시",
+      "contract_no": "2026-1-0421",
+      "contract_amount": "14,800,000,000원",
+      "site_manager": "정진우 차장",
+      "safety_inspectors": "이경희 대리, 박보건 기사",
+      "last_inspect_date": "2026-10-31",
+      "progress": "마감 92%",
+      "progress_detail": "시험 및 시운전 85%",
+      "workers_total": 34,
+      "workers_mgmt": 10,
+      "workers_tech": 24,
+      "workers_detail": "관리자 10명 / 기술인 24명",
+      "inspection_rounds": [
+        { "round": "1차", "date": "2026-10-18", "inspector": "이경희 대리", "progress": "88%", "workers": "10명 / 22명", "risk_count": 5, "high_risk": 1, "rate": 100.0 },
+        { "round": "2차", "date": "2026-10-31", "inspector": "이경희 대리", "progress": "92%", "workers": "10명 / 24명", "risk_count": 4, "high_risk": 0, "rate": 100.0 }
+      ],
+      "risk_items": [],
+      "before_after_photos": [],
+      "summary_opinion": {
+        "tbm": "클린룸 시운전 안전수칙 숙지.",
+        "notice": "잔여 마감작업 시 보호구 착용 철저.",
+        "eval": "무재해 준공 목표 달성 임박, 상태 양호.",
+        "action_plan": "준공 시까지 정리정돈 및 화재감시원 배치 유지."
+      }
     },
     {
-      "name": "근골격계/과부하",
-      "count": 6,
-      "percentage": 12,
-      "color": "#10b981"
-    },
-    {
-      "name": "감전/화재",
-      "count": 4,
-      "percentage": 8,
-      "color": "#8b5cf6"
-    }
-  ],
-  "near_miss_reports": [
-    {
-      "id": 1,
-      "date": "2026-11-05 14:20",
-      "location": "제1가공동 프레스 라인 3번기",
-      "type": "끼임/협착 위험",
-      "urgency": "높음",
-      "status": "조치완료",
-      "reporter": "김안전 조장",
-      "content": "방호 센서 반응 딜레이 감지되어 즉시 인터록 정밀 점검 및 부품 교체 완료",
-      "action": "센서 신품 교체 및 작업 전 인터록 점검 항목 추가"
-    },
-    {
-      "id": 2,
-      "date": "2026-11-04 10:15",
-      "location": "중앙 물류창고 2구역 통로",
-      "type": "넘어짐/전도 위험",
-      "urgency": "보통",
-      "status": "조치완료",
-      "reporter": "이물류 주임",
-      "content": "지게차 이동 통로 바닥에 오일 누유 흔적으로 인한 미끄럼 위험 발견",
-      "action": "유흡착재 배포 및 즉시 세척 작업 완료, 지게차 패킹 점검"
-    },
-    {
-      "id": 3,
-      "date": "2026-11-02 16:40",
-      "location": "제2조립동 도장 스프레이실",
-      "type": "화학물질/환기",
-      "urgency": "높음",
-      "status": "조치완료",
-      "reporter": "박보건 기사",
-      "content": "국소배기장치 풍량 저하로 인한 유기용제 냄새 일시 체류",
-      "action": "배기 덕트 내 필터 교체 및 풍속 0.7m/s 정상화 확인"
-    },
-    {
-      "id": 4,
-      "date": "2026-10-30 09:30",
-      "location": "옥외 고압변전실 외곽 펜스",
-      "type": "감전/화재 위험",
-      "urgency": "보통",
-      "status": "조치완료",
-      "reporter": "최전기 주임",
-      "content": "접지선 단자 접속부 노후 부식 확인",
-      "action": "접지 단자 재압착 및 방식 테이핑 조치 완료"
-    }
-  ],
-  "emergency_contacts": [
-    {
-      "role": "안전총괄책임자 (공장장)",
-      "name": "홍길동 상무",
-      "tel": "010-1234-5678",
-      "ext": "1001"
-    },
-    {
-      "role": "안전관리자 (사내)",
-      "name": "김안전 과장",
-      "tel": "010-2345-6789",
-      "ext": "1004"
-    },
-    {
-      "role": "보건관리자 (간호사)",
-      "name": "이보건 대리",
-      "tel": "010-3456-7890",
-      "ext": "1007"
-    },
-    {
-      "role": "사내 방재센터/상황실",
-      "name": "24시간 종합관제실",
-      "tel": "02-123-4911",
-      "ext": "4911"
-    },
-    {
-      "role": "관할 소방서 / 응급구조",
-      "name": "119 소방안전센터",
-      "tel": "119",
-      "ext": "119"
-    },
-    {
-      "role": "지정 병원 응급의료센터",
-      "name": "한국산업안전 종합병원",
-      "tel": "02-987-6543",
-      "ext": "응급실"
+      "id": "site-5",
+      "name": "삼성디스플레이 아산 신축공사",
+      "short_name": "아산 디스플레이",
+      "company": "(주)신성이엔지 하이테크안전팀",
+      "client": "삼성디스플레이",
+      "main_contractor": "삼성물산",
+      "contract_name": "SDC 신축 실링 공사",
+      "main_process": "System Ceiling",
+      "period": "2026.08.01 ~ 2027.08.31",
+      "location": "충청남도 아산시 탕정면",
+      "contract_no": "2026-8-0914",
+      "contract_amount": "19,500,000,000원",
+      "site_manager": "강철민 부장",
+      "safety_inspectors": "김장성 이사, 이정원 대리",
+      "last_inspect_date": "2026-11-02",
+      "progress": "자재 입고 및 준비 15%",
+      "progress_detail": "자재 반입 40% · 샵장 설치 80%",
+      "workers_total": 28,
+      "workers_mgmt": 8,
+      "workers_tech": 20,
+      "workers_detail": "관리자 8명 / 기술인 20명",
+      "inspection_rounds": [
+        { "round": "1차", "date": "2026-11-02", "inspector": "김장성 이사", "progress": "15%", "workers": "8명 / 20명", "risk_count": 7, "high_risk": 3, "rate": 85.7 }
+      ],
+      "risk_items": [],
+      "before_after_photos": [],
+      "summary_opinion": {
+        "tbm": "초기 샵장 설치 작업 안전수칙 TBM 실시.",
+        "notice": "지게차 신호수 배치 의무화.",
+        "eval": "자재 반입 구간 통제 펜스 설치 완료 확인.",
+        "action_plan": "본공사 착수 전 특별안전교육 실시."
+      }
     }
   ]
 }
