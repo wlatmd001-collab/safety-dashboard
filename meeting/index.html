@@ -239,7 +239,7 @@ $('btnRec').onclick = async ()=>{
     mediaRec.ondataavailable = e=>{ if(e.data.size) chunks.push(e.data); };
     mediaRec.onstop = ()=>{ audioBlob=new Blob(chunks,{type:mediaRec.mimeType||'audio/webm'}); stream.getTracks().forEach(t=>t.stop()); $('btnAudio').disabled=false; };
     mediaRec.start(1000);
-  }catch(e){ $('recStatus').textContent='마이크 권한이 거부되었습니다: '+e.message; return; }
+  }catch(e){ $('recStatus').innerHTML='마이크 권한이 없습니다. <b>주소창 왼쪽 아이콘 → 권한 → 마이크 허용</b> 후 새로고침하세요.'; return; }
 
   rec = new SR(); rec.lang='ko-KR'; rec.continuous=true; rec.interimResults=true;
   rec.onresult = e=>{
@@ -251,7 +251,14 @@ $('btnRec').onclick = async ()=>{
     }
     $('interim').textContent = interim;
   };
-  rec.onerror = e=>{ if(e.error!=='no-speech' && e.error!=='aborted') $('recStatus').textContent='음성인식 오류: '+e.error+' (자동 재시도)'; };
+  rec.onerror = e=>{
+    if(e.error==='not-allowed' || e.error==='service-not-allowed' || e.error==='audio-capture'){
+      $('btnStop').onclick();
+      $('recStatus').innerHTML='마이크 권한이 없습니다. <b>주소창 왼쪽 아이콘 → 권한 → 마이크 허용</b> 후 새로고침하세요. (화면 위 떠 있는 버튼이 있으면 허용 창이 막힙니다)';
+      return;
+    }
+    if(e.error!=='no-speech' && e.error!=='aborted') $('recStatus').textContent='음성인식 오류: '+e.error+' (자동 재시도)';
+  };
   rec.onend = ()=>{ if(recording){ try{rec.start()}catch(e){} } };   // 끊겨도 계속 이어서 받아쓰기
   recording=true; startTs=Date.now(); rec.start(); keepAwake(true);
   $('btnRec').disabled=true; $('btnStop').disabled=false; $('btnAudio').disabled=true;
