@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회의록 자동작성기 · 초기현장지원</title>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+  :root{--ink:#222;--line:#999;--head:#c8c8c8;--accent:#1f4e79;--bg:#f4f5f7;--rec:#d93025}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:var(--accent);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:700}
+  header .sub{opacity:.8;font-size:13px}
+  main{display:grid;grid-template-columns:minmax(380px,1fr) minmax(480px,1.1fr);gap:16px;padding:16px;max-width:1600px;margin:auto}
+  @media(max-width:1000px){main{grid-template-columns:1fr}}
+  @media(max-width:600px){
+    main{padding:10px;gap:0}
+    header{padding:10px 14px}
+    header .sub{display:none}
+    input,textarea,select,button{font-size:16px}   /* iOS 확대 방지 */
+    .row{grid-template-columns:1fr}
+    #btnRec,#btnStop{flex:1;padding:16px 8px;font-size:18px;font-weight:700;white-space:nowrap}
+    #btnAudio{flex-basis:100%}
+  }
+  .opt{display:flex;align-items:center;gap:6px;font-size:13px;margin-top:8px;color:#444}
+  .opt input{width:auto}
+  .card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 10px;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .step{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  label{font-size:12px;color:#555;display:block;margin:6px 0 2px}
+  input,textarea,select{width:100%;padding:7px 9px;border:1px solid #ccc;border-radius:5px;font:inherit;font-size:13px}
+  textarea{resize:vertical;line-height:1.5}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  button{border:0;border-radius:5px;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;background:#e4e7ec;color:#222}
+  button.primary{background:var(--accent);color:#fff}
+  button.rec{background:var(--rec);color:#fff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .status{font-size:12px;color:#666;margin-top:6px;min-height:16px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--rec);animation:blink 1s infinite;margin-right:4px;vertical-align:middle}
+  @keyframes blink{50%{opacity:.2}}
+  #transcript{min-height:220px;font-size:13px}
+  #interim{color:#999;font-size:13px;font-style:italic;min-height:18px;margin-top:4px}
+  details{margin-top:8px;font-size:13px}
+  summary{cursor:pointer;color:var(--accent)}
+  .hint{font-size:12px;color:#777;line-height:1.5}
+
+  /* ===== 회의록 미리보기 (PDF 양식 재현) ===== */
+  #sheet{background:#fff;width:100%;max-width:794px;margin:auto;padding:42px 48px;border:1px solid #ccc;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  #sheet h1{font-size:28px;font-weight:700;color:#444;margin:0 0 26px;letter-spacing:2px}
+  .info{width:100%;border-collapse:collapse;margin-bottom:30px;font-size:14px}
+  .info th,.info td{border:1px solid var(--line);padding:9px 10px}
+  .info th{background:var(--head);width:16%;font-weight:700;text-align:center}
+  .info td{font-weight:700}
+  .info td.plain{font-weight:400}
+  .sec-title{font-size:24px;font-weight:700;margin:6px 0 8px}
+  .box{border:1px solid var(--line);margin-bottom:34px}
+  .box .bh{background:var(--head);padding:12px 10px;font-weight:700;font-size:14px;border-bottom:1px solid var(--line)}
+  .box .bb{padding:14px 12px;font-size:14px;line-height:1.55;min-height:80px}
+  .bb .cat{font-weight:700;margin-top:2px}
+  .bb .it{padding-left:12px}
+  .bb .sch{margin:3px 0}
+  [contenteditable]:focus{outline:2px dashed #8ab4f8;outline-offset:2px}
+  @media(max-width:600px){
+    #sheet{padding:18px 12px}
+    #sheet h1{font-size:20px;margin-bottom:14px}
+    .info{font-size:12px;margin-bottom:18px}
+    .info th,.info td{padding:6px 5px}
+    .info th{white-space:nowrap;width:1%}
+    .sec-title{font-size:18px}
+    .box{margin-bottom:20px}
+    .box .bh,.box .bb{font-size:12.5px}
+  }
+  @media print{
+    header,.left,.no-print{display:none!important}
+    main{display:block;padding:0}
+    body{background:#fff}
+    #sheet{border:0;box-shadow:none;padding:0;max-width:none}
+    .card{border:0;padding:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>회의록 자동작성기</h1>
+  <span class="sub">녹음 → 실시간 받아쓰기 → 양식 자동정리 → PPT/PDF</span>
+</header>
+
+<main>
+<!-- ========== 왼쪽: 입력 ========== -->
+<section class="left">
+  <div class="card">
+    <h2><span class="step">1</span>회의 기본정보</h2>
+    <div class="row">
+      <div><label>일시</label><input id="f_date" value="2026.11.17"></div>
+      <div><label>장소</label><input id="f_place" value="대덕전자 현장 사무실"></div>
+    </div>
+    <label>참석자</label><input id="f_people" placeholder="예) 홍길동 이사, 김철수 부장, …">
+    <label>주제</label><input id="f_subject" value="대덕전자 현장 초기 안전관리 지원 - 안전보건관리 체계 및 협력사 관리방안 협의">
+    <label>목적</label><input id="f_purpose" value="초기 현장 안전보건관리 체계 구축 지원">
+  </div>
+
+  <div class="card">
+    <h2><span class="step">2</span>녹음 · 받아쓰기</h2>
+    <div class="btns">
+      <button id="btnRec" class="rec">● 녹음 시작</button>
+      <button id="btnStop" disabled>■ 정지</button>
+      <button id="btnAudio" disabled>녹음파일 저장</button>
+    </div>
+    <label class="opt"><input type="checkbox" id="optAudio"> 음성파일도 함께 녹음 (휴대폰에서는 받아쓰기가 끊길 수 있어 기본 꺼짐)</label>
+    <div class="status" id="recStatus"></div>
+    <label>받아쓰기 (직접 수정·붙여넣기 가능)</label>
+    <textarea id="transcript" placeholder="녹음을 시작하면 여기에 문장이 쌓입니다. 다른 앱(클로바노트 등)에서 받은 텍스트를 붙여넣어도 됩니다."></textarea>
+    <div id="interim"></div>
+    <p class="hint">※ PC: Chrome/Edge · 안드로이드: Chrome · 아이폰: Safari(설정 → Siri에서 받아쓰기 켜기). 마이크 권한을 허용하세요. 받아쓰기는 인터넷 연결이 필요하며, 녹음 중에는 화면이 꺼지지 않게 유지합니다.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">3</span>회의록 자동 정리</h2>
+    <div class="btns">
+      <button id="btnRule" class="primary">키워드 기반 자동정리</button>
+      <button id="btnAI">AI 정리 (Claude API)</button>
+    </div>
+    <details>
+      <summary>AI 정리 설정</summary>
+      <label>Anthropic API Key (이 PC 브라우저에만 저장)</label>
+      <input id="apiKey" type="password" placeholder="sk-ant-...">
+      <label>모델</label>
+      <select id="model">
+        <option value="claude-sonnet-5-5">claude-sonnet-5-5</option>
+        <option value="claude-opus-5-5">claude-opus-5-5</option>
+        <option value="claude-haiku-5-5">claude-haiku-5-5</option>
+      </select>
+      <p class="hint">키워드 정리는 오프라인에서도 되고, AI 정리는 대화체를 개조식 문장으로 다듬어 줍니다.</p>
+    </details>
+    <div class="status" id="sumStatus"></div>
+
+    <label>Ⅰ. 회의 내용 (형식: "■ 분류" 줄 아래 "- 항목")</label>
+    <textarea id="t_content" rows="12"></textarea>
+    <label>Ⅱ. 향후 추진 일정 (한 줄에 하나)</label>
+    <textarea id="t_schedule" rows="5"></textarea>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">4</span>내보내기</h2>
+    <div class="btns">
+      <button id="btnPPT" class="primary">PPT 다운로드</button>
+      <button id="btnPDF">PDF로 인쇄</button>
+      <button id="btnTxt">받아쓰기 원문 저장</button>
+      <button id="btnReset">새 회의</button>
+    </div>
+    <div class="status" id="expStatus"></div>
+  </div>
+</section>
+
+<!-- ========== 오른쪽: 미리보기 ========== -->
+<section>
+  <div class="card no-print" style="padding:8px 14px"><span class="hint">미리보기 — 입력·정리 내용이 바로 반영됩니다.</span></div>
+  <div id="sheet">
+    <h1>회의 작성 일지</h1>
+    <table class="info">
+      <tr><th>일시</th><td id="p_date" style="text-align:center;width:34%"></td><th>장소</th><td id="p_place" style="text-align:center"></td></tr>
+      <tr><th>참석자</th><td colspan="3" id="p_people"></td></tr>
+      <tr><th>주제</th><td colspan="3" id="p_subject" class="plain"></td></tr>
+      <tr><th>목적</th><td colspan="3" id="p_purpose"></td></tr>
+    </table>
+    <div class="sec-title">Ⅰ. 회의 내용</div>
+    <div class="box"><div class="bh" id="p_ctitle"></div><div class="bb" id="p_content"></div></div>
+    <div class="sec-title">Ⅱ. 향후 추진 일정</div>
+    <div class="box"><div class="bh">향후 주요 일정</div><div class="bb" id="p_schedule"></div></div>
+  </div>
+</section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k){ try{return localStorage.getItem(k)}catch(e){return null} },
+  set(k,v){ try{localStorage.setItem(k,v)}catch(e){} }
+};
+const FIELDS = ['f_date','f_place','f_people','f_subject','f_purpose','transcript','t_content','t_schedule','apiKey','model'];
+
+/* ---------- 저장/복원 ---------- */
+function save(){ FIELDS.forEach(f=>store.set('mm_'+f,$(f).value)); }
+function load(){ FIELDS.forEach(f=>{const v=store.get('mm_'+f); if(v!==null && v!=='') $(f).value=v;}); }
+
+/* ---------- 미리보기 ---------- */
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function parseDate(s){
+  const m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  return m ? {y:m[1],m:+m[2],d:+m[3]} : null;
+}
+function parseContent(text){
+  const secs=[]; let cur=null;
+  text.split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{
+    if(/^[■□▪◼]/.test(l)){ cur={title:l.replace(/^[■□▪◼]\s*/,''),items:[]}; secs.push(cur); }
+    else { if(!cur){cur={title:'기타',items:[]};secs.push(cur);} cur.items.push(l.replace(/^[-·•∙]\s*/,'')); }
+  });
+  return secs;
+}
+function render(){
+  $('p_date').textContent=$('f_date').value;
+  $('p_place').textContent=$('f_place').value;
+  $('p_people').textContent=$('f_people').value;
+  $('p_subject').textContent=$('f_subject').value;
+  $('p_purpose').textContent=$('f_purpose').value;
+  const d=parseDate($('f_date').value);
+  $('p_ctitle').textContent = d ? `${d.y}년도 ${d.m}월 ${d.d}일 회의 내용` : '회의 내용';
+  $('p_content').innerHTML = parseContent($('t_content').value).map(s=>
+    `<div class="cat">■ ${esc(s.title)}</div>`+s.items.map(i=>`<div class="it">- ${esc(i)}</div>`).join('')
+  ).join('') || '<span class="hint">(자동 정리 후 표시됩니다)</span>';
+  $('p_schedule').innerHTML = $('t_schedule').value.split('\n').map(l=>l.trim()).filter(Boolean)
+    .map(l=>`<div class="sch">■ ${esc(l.replace(/^[■\-·•]\s*/,''))}</div>`).join('') || '<span class="hint">(자동 정리 후 표시됩니다)</span>';
+  save();
+}
+FIELDS.forEach(f=>$(f).addEventListener('input',render));
+
+/* ---------- 녹음 + 음성인식 ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec=null, recording=false, mediaRec=null, chunks=[], audioBlob=null, startTs=0, timer=null, wakeLock=null;
+const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+$('optAudio').checked = !IS_MOBILE;
+async function keepAwake(on){
+  try{
+    if(on && 'wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); }
+    else if(!on && wakeLock){ await wakeLock.release(); wakeLock=null; }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{ if(recording && document.visibilityState==='visible') keepAwake(true); });
+
+function stamp(){ const s=Math.floor((Date.now()-startTs)/1000); return `[${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}] `; }
+
+$('btnRec').onclick = async ()=>{
+  if(!SR){ $('recStatus').textContent='이 브라우저는 음성인식을 지원하지 않습니다. Chrome 또는 Edge로 여세요.'; return; }
+  if($('optAudio').checked) try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    chunks=[]; mediaRec = new MediaRecorder(stream);
+    mediaRec.ondataavailable = e=>{ if(e.data.size) chunks.push(e.data); };
+    mediaRec.onstop = ()=>{ audioBlob=new Blob(chunks,{type:mediaRec.mimeType||'audio/webm'}); stream.getTracks().forEach(t=>t.stop()); $('btnAudio').disabled=false; };
+    mediaRec.start(1000);
+  }catch(e){ $('recStatus').textContent='마이크 권한이 거부되었습니다: '+e.message; return; }
+
+  rec = new SR(); rec.lang='ko-KR'; rec.continuous=true; rec.interimResults=true;
+  rec.onresult = e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal){ const t=$('transcript'); t.value += (t.value && !t.value.endsWith('\n')?'\n':'') + stamp() + r[0].transcript.trim(); t.scrollTop=t.scrollHeight; save(); }
+      else interim += r[0].transcript;
+    }
+    $('interim').textContent = interim;
+  };
+  rec.onerror = e=>{ if(e.error!=='no-speech' && e.error!=='aborted') $('recStatus').textContent='음성인식 오류: '+e.error+' (자동 재시도)'; };
+  rec.onend = ()=>{ if(recording){ try{rec.start()}catch(e){} } };   // 끊겨도 계속 이어서 받아쓰기
+  recording=true; startTs=Date.now(); rec.start(); keepAwake(true);
+  $('btnRec').disabled=true; $('btnStop').disabled=false; $('btnAudio').disabled=true;
+  timer=setInterval(()=>{ $('recStatus').innerHTML='<span class="dot"></span>녹음 중 '+stamp().trim(); },500);
+};
+$('btnStop').onclick = ()=>{
+  recording=false; try{rec.stop()}catch(e){} if(mediaRec && mediaRec.state!=='inactive') mediaRec.stop();
+  clearInterval(timer); $('interim').textContent=''; keepAwake(false);
+  $('recStatus').textContent='녹음 종료 ('+stamp().trim()+'). 3단계에서 자동 정리하세요.';
+  $('btnRec').disabled=false; $('btnStop').disabled=true;
+};
+function download(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000); }
+function fileBase(){ const d=parseDate($('f_date').value); const ymd=d?`${String(d.y).slice(2)}.${String(d.m).padStart(2,'0')}.${String(d.d).padStart(2,'0')}`:'';
+  const co=($('f_place').value.split(' ')[0]||'현장'); return `회의록_${co} 초기현장지원_${ymd}`; }
+$('btnAudio').onclick = ()=>{ if(audioBlob) download(audioBlob, fileBase()+'_녹음.webm'); };
+$('btnTxt').onclick = ()=> download(new Blob([$('transcript').value],{type:'text/plain;charset=utf-8'}), fileBase()+'_받아쓰기.txt');
+
+/* ---------- 키워드 기반 자동정리 ---------- */
+const CATS = [
+  ['현장 현황', ['공사기간','공기','안전관리비','공사금액','착공','준공','공정','투입 인원','인원','공사 규모','현장 개요']],
+  ['안전보건관리체제 및 문서', ['총괄책임자','관리감독자','안전관리자','보건관리자','선임','규정','안전관리계획','계획서','체제','체계','보수교육','위험성평가']],
+  ['교육 및 작업허가', ['교육','작업허가','허가서','TBM','티비엠','무재해','특별교육','신규 교육','일지']],
+  ['노사협의체 및 협력사 관리', ['노사협의체','협의체','협력사','도급','수급','이행서류','반입','하도급','업체']],
+  ['보건 및 시설', ['작업환경측정','검진','건강','휴게실','위생','샤워','냉난방','음용수','동선','비상','소화','보호구','MSDS','시설','펜스','라인테이프']],
+];
+const DATE_RE = /(\d{1,2}\s*[\/\.]\s*\d{1,2})|(\d{1,2}\s*월\s*\d{1,2}\s*일)|(\d{1,2}\s*월\s*(초|중|말|중순|말까지))|(다음\s*주|차주|이번\s*주|금주|내일|모레)|(까지|이전에|전까지)/;
+const FUTURE_RE = /(할 예정|하겠|진행하|보내|발송|제출|접수|작성해|해 주|해주|하기로|예정|계획)/;
+
+function cleanSentence(s){
+  s = s.replace(/^\[\d{2}:\d{2}\]\s*/,'')
+       .replace(/(^|\s)(어+|음+|그+|저기|뭐|이제|약간|좀|아|네|예)(?=\s)/g,' ')
+       .replace(/\s+/g,' ').trim();
+  // 대화체 → 개조식
+  s = s.replace(/[.!?。]+$/,'');
+  const rules = [
+    [/\s*(해야\s*(합니다|돼요|됩니다|해요)|필요합니다|필요해요|필요)$/, ' 필요'],
+    [/(해서|하여)?\s*(보내|드리|하|진행하|작성하|제출하)?(드리)?겠습니다$|할\s*예정입니다$|할게요$|하기로\s*했습니다$|하도록\s*하겠습니다$/, m=>m.startsWith('해서')||m.startsWith('하여')?' 예정':(/보내/.test(m)?' 송부 예정':/작성/.test(m)?' 작성 예정':/제출/.test(m)?' 제출 예정':' 예정')],
+    [/(완료했습니다|했습니다|했어요|됐습니다|되었습니다|됐어요)$/, ' 완료'],
+    [/(입니다|이에요|예요|습니다|어요|아요|요)$/, ''],
+  ];
+  for(const [re,rep] of rules){ if(re.test(s)){ s=s.replace(re,rep); break; } }
+  return s.replace(/\s+/g,' ').trim();
+}
+function splitSentences(text){
+  return text.split(/\n|(?<=[.?!])\s+|(?<=(?:니다|어요|아요|네요|죠))\s+/).filter(x=>x && x.trim().length>=6 && !/^(니다|어요|아요|네요|죠)$/.test(x));
+}
+function ruleSummarize(){
+  const raw=$('transcript').value.trim();
+  if(!raw){ $('sumStatus').textContent='받아쓰기 내용이 없습니다.'; return; }
+  const buckets = CATS.map(c=>({title:c[0],kw:c[1],items:[]})); const etc={title:'기타 협의사항',items:[]};
+  const schedule=[]; const seen=new Set();
+  splitSentences(raw).forEach(s0=>{
+    const s=cleanSentence(s0); if(s.length<6 || seen.has(s)) return; seen.add(s);
+    if(DATE_RE.test(s) && FUTURE_RE.test(s0)){ schedule.push(s); }
+    let best=null,score=0;
+    buckets.forEach(b=>{ const sc=b.kw.reduce((a,k)=>a+(s.includes(k)?1:0),0); if(sc>score){score=sc;best=b;} });
+    (best||etc).items.push(s);
+  });
+  const out=[...buckets,etc].filter(b=>b.items.length);
+  $('t_content').value = out.map(b=>'■ '+b.title+'\n'+b.items.map(i=>'- '+i).join('\n')).join('\n');
+  $('t_schedule').value = schedule.join('\n');
+  $('sumStatus').textContent=`정리 완료: ${out.reduce((a,b)=>a+b.items.length,0)}개 항목, 일정 ${schedule.length}건. 아래에서 다듬으세요.`;
+  render();
+}
+$('btnRule').onclick = ruleSummarize;
+
+/* ---------- AI 정리 (Claude API, 브라우저 직접 호출) ---------- */
+$('btnAI').onclick = async ()=>{
+  const key=$('apiKey').value.trim(), raw=$('transcript').value.trim();
+  if(!raw){ $('sumStatus').textContent='받아쓰기 내용이 없습니다.'; return; }
+  if(!key){ document.querySelector('details').open=true; $('sumStatus').textContent='API Key를 입력하세요 (없으면 키워드 정리를 사용).'; return; }
+  $('sumStatus').textContent='AI가 정리 중…'; $('btnAI').disabled=true;
+  const prompt = `다음은 건설현장 "초기현장 안전관리 지원" 회의의 음성 받아쓰기입니다. 아래 회의록 양식에 맞게 정리하세요.
+
+[양식 규칙]
+- 회의 내용은 분류별로 묶습니다. 가능한 분류: 현장 현황 / 안전보건관리체제 및 문서 / 교육 및 작업허가 / 노사협의체 및 협력사 관리 / 보건 및 시설 / (필요시 기타). 내용 없는 분류는 생략.
+- 각 항목은 한 줄 개조식, 명사형 종결(예: "~ 수립", "~ 완료", "~ 운영", "~ 필요"). 날짜는 'YY.MM.DD 또는 MM/DD 형식. 금액·시간·인원 등 수치는 빠짐없이.
+- 분류당 2~5개 항목, 중복·잡담 제거. 받아쓰기 오인식으로 보이는 단어는 문맥상 맞는 안전보건 용어로 교정.
+- 향후 일정은 "MM/DD : 내용" 또는 "11/18 이전: 내용", "11월 중: 내용" 형식.
+- 참석자 이름/직급이 언급되면 attendees에 "이름 직급" 형태로.
+
+반드시 아래 JSON만 출력:
+{"attendees":"", "sections":[{"title":"","items":[""]}], "schedule":[""]}
+
+[받아쓰기]
+${raw}`;
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:$('model').value,max_tokens:4000,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error?data.error.message:res.status);
+    const txt=data.content.map(c=>c.text||'').join('');
+    const j=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
+    $('t_content').value=(j.sections||[]).map(s=>'■ '+s.title+'\n'+s.items.map(i=>'- '+i).join('\n')).join('\n');
+    $('t_schedule').value=(j.schedule||[]).join('\n');
+    if(j.attendees && !$('f_people').value.trim()) $('f_people').value=j.attendees;
+    $('sumStatus').textContent='AI 정리 완료. 아래에서 확인·수정하세요.';
+    render();
+  }catch(e){ $('sumStatus').textContent='AI 정리 실패: '+e.message+' → 키워드 정리를 사용하세요.'; }
+  $('btnAI').disabled=false;
+};
+
+/* ---------- PPT (A4 세로, PDF 양식 재현) ---------- */
+$('btnPPT').onclick = async ()=>{
+  if(typeof PptxGenJS==='undefined'){ $('expStatus').textContent='PPT 라이브러리를 불러오지 못했습니다(인터넷 필요). "PDF로 인쇄"를 사용하세요.'; return; }
+  const pptx=new PptxGenJS();
+  pptx.defineLayout({name:'A4P',width:8.27,height:11.69}); pptx.layout='A4P';
+  const F='맑은 고딕', GRAY='C8C8C8', LINE='999999';
+  const s=pptx.addSlide();
+  const X=0.6, W=7.07;
+  s.addText('회의 작성 일지',{x:X,y:0.45,w:W,h:0.6,fontFace:F,fontSize:24,bold:true,color:'444444'});
+  s.addShape(pptx.shapes.LINE,{x:8.05,y:1.25,w:0,h:10,line:{color:'DDDDDD',width:1}});
+  const cell=(t,o={})=>({text:t,options:Object.assign({fontFace:F,fontSize:11,bold:true,valign:'middle',border:{type:'solid',color:LINE,pt:0.75}},o)});
+  const H={fill:{color:GRAY},align:'center'};
+  s.addTable([
+    [cell('일시',H),cell($('f_date').value,{align:'center'}),cell('장소',H),cell($('f_place').value,{align:'center'})],
+    [cell('참석자',H),cell($('f_people').value,{colspan:3})],
+    [cell('주제',H),cell($('f_subject').value,{colspan:3,bold:false})],
+    [cell('목적',H),cell($('f_purpose').value,{colspan:3})],
+  ],{x:X,y:1.3,w:W,colW:[1.12,2.4,1.6,1.95],rowH:[0.5,0.48,0.32,0.48]});
+
+  const secs=parseContent($('t_content').value);
+  const sched=$('t_schedule').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.replace(/^[■\-·•]\s*/,''));
+  const nLines=secs.reduce((a,b)=>a+1+b.items.length,0);
+  const fs = nLines>26?8.5: nLines>20?9.5:10.5;
+  const lineH = fs/72*1.45;
+  const cH = Math.max(1.4, nLines*lineH+0.3);
+  const d=parseDate($('f_date').value);
+
+  let y=3.45;
+  s.addText('Ⅰ. 회의 내용',{x:X,y,w:W,h:0.45,fontFace:F,fontSize:18,bold:true}); y+=0.5;
+  s.addText(d?`${d.y}년도 ${d.m}월 ${d.d}일 회의 내용`:'회의 내용',{x:X,y,w:W,h:0.45,fontFace:F,fontSize:11,bold:true,fill:{color:GRAY},line:{color:LINE,width:0.75},margin:6}); y+=0.45;
+  const runs=[]; secs.forEach(sc=>{
+    runs.push({text:'■ '+sc.title,options:{bold:true,breakLine:true}});
+    sc.items.forEach(i=>runs.push({text:'  - '+i,options:{breakLine:true}}));
+  });
+  if(runs.length) runs[runs.length-1].options.breakLine=false;
+  s.addText(runs.length?runs:[{text:' '}],{x:X,y,w:W,h:cH,fontFace:F,fontSize:fs,valign:'top',line:{color:LINE,width:0.75},margin:8,lineSpacingMultiple:1.05});
+  y+=cH+0.35;
+
+  const sH=Math.max(0.9,sched.length*lineH+0.35);
+  s.addText('Ⅱ. 향후 추진 일정',{x:X,y,w:W,h:0.45,fontFace:F,fontSize:18,bold:true}); y+=0.5;
+  s.addText('향후 주요 일정',{x:X,y,w:W,h:0.38,fontFace:F,fontSize:11,bold:true,fill:{color:GRAY},line:{color:LINE,width:0.75},margin:6}); y+=0.38;
+  s.addText(sched.length?sched.map((l,i)=>({text:'■ '+l,options:{breakLine:i<sched.length-1}})):[{text:' '}],
+    {x:X,y,w:W,h:sH,fontFace:F,fontSize:fs,valign:'top',line:{color:LINE,width:0.75},margin:8});
+  if(y+sH>11.4) $('expStatus').textContent='내용이 많아 한 장을 넘칠 수 있습니다. 항목을 줄이거나 PPT에서 글자 크기를 조정하세요.';
+  else $('expStatus').textContent='PPT 생성 완료.';
+  await pptx.writeFile({fileName:fileBase()+'.pptx'});
+};
+$('btnPDF').onclick = ()=>{ document.title=fileBase(); window.print(); };
+$('btnReset').onclick = ()=>{
+  if(!window.confirm('받아쓰기와 정리 내용을 비울까요? (기본정보는 유지)')) return;
+  ['transcript','t_content','t_schedule'].forEach(f=>$(f).value=''); render();
+};
+
+load(); render();
+</script>
+</body>
+</html>
