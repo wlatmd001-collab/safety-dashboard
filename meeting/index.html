@@ -120,11 +120,11 @@
     <h2><span class="step">3</span>회의록 자동 정리</h2>
     <div class="btns">
       <button id="btnRule" class="primary">키워드 기반 자동정리</button>
-      <button id="btnAI">AI 정리 (Claude API)</button>
+      <button id="btnAI">AI 정리</button>
     </div>
     <details>
       <summary>AI 정리 설정</summary>
-      <label>Anthropic API Key (이 PC 브라우저에만 저장)</label>
+      <label>Anthropic API Key (선택 · 이 기기에만 저장)</label>
       <input id="apiKey" type="password" placeholder="sk-ant-...">
       <label>모델</label>
       <select id="model">
@@ -132,7 +132,7 @@
         <option value="claude-opus-5-5">claude-opus-5-5</option>
         <option value="claude-haiku-5-5">claude-haiku-5-5</option>
       </select>
-      <p class="hint">키워드 정리는 오프라인에서도 되고, AI 정리는 대화체를 개조식 문장으로 다듬어 줍니다.</p>
+      <p class="hint">키가 없으면 AI 정리 버튼도 키워드 정리로 동작합니다. 키는 console.anthropic.com에서 발급합니다.</p>
     </details>
     <div class="status" id="sumStatus"></div>
 
@@ -329,7 +329,7 @@ $('btnRule').onclick = ruleSummarize;
 $('btnAI').onclick = async ()=>{
   const key=$('apiKey').value.trim(), raw=$('transcript').value.trim();
   if(!raw){ $('sumStatus').textContent='받아쓰기 내용이 없습니다.'; return; }
-  if(!key){ document.querySelector('details').open=true; $('sumStatus').textContent='API Key를 입력하세요 (없으면 키워드 정리를 사용).'; return; }
+  if(!key){ ruleSummarize(); $('sumStatus').textContent='API Key가 없어 키워드 정리로 대신 정리했습니다. 아래 내용을 확인·수정하세요.'; return; }
   $('sumStatus').textContent='AI가 정리 중…'; $('btnAI').disabled=true;
   const prompt = `다음은 건설현장 "초기현장 안전관리 지원" 회의의 음성 받아쓰기입니다. 아래 회의록 양식에 맞게 정리하세요.
 
