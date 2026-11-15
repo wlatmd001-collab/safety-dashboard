@@ -61,6 +61,11 @@
   .bb .cat{font-weight:700;margin-top:2px}
   .bb .it{padding-left:12px}
   .bb .sch{margin:3px 0}
+  .legal{width:100%;border-collapse:collapse;font-size:12.5px}
+  .legal th,.legal td{border:1px solid var(--line);padding:6px 7px;vertical-align:top;text-align:left}
+  .legal th{background:#e6e6e6;font-weight:700;text-align:center}
+  .st-ok{color:#1e7b34;font-weight:700}.st-fix{color:#c5221f;font-weight:700}.st-chk{color:#b06000;font-weight:700}
+  .disc{font-size:11px;color:#777;margin-top:6px}
   [contenteditable]:focus{outline:2px dashed #8ab4f8;outline-offset:2px}
   @media(max-width:600px){
     #sheet{padding:18px 12px}
@@ -120,23 +125,20 @@
     <h2><span class="step">3</span>회의록 자동 정리</h2>
     <div class="btns">
       <button id="btnRule" class="primary">키워드 기반 자동정리</button>
-      <button id="btnAI">AI 정리</button>
+      <button id="btnAI" style="background:#c15f3c;color:#fff">✨ Claude 다듬기 + 산안법 검토</button>
+
     </div>
-    <div class="btns">
-      <button id="btnToClaude" class="primary" style="background:#c15f3c">✨ Claude로 보내기 (다듬기 + 산안법 검토)</button>
-    </div>
-    <div class="status" id="claudeStatus"></div>
-    <details>
-      <summary>AI 정리 설정</summary>
-      <label>Anthropic API Key (선택 · 이 기기에만 저장)</label>
+    <details id="keyBox">
+      <summary>Claude 연결 설정 (처음 한 번만)</summary>
+      <label>Anthropic API Key — 이 휴대폰에만 저장됩니다</label>
       <input id="apiKey" type="password" placeholder="sk-ant-...">
       <label>모델</label>
       <select id="model">
-        <option value="claude-sonnet-5-5">claude-sonnet-5-5</option>
-        <option value="claude-opus-5-5">claude-opus-5-5</option>
-        <option value="claude-haiku-5-5">claude-haiku-5-5</option>
+        <option value="claude-sonnet-5-5">claude-sonnet-5-5 (권장)</option>
+        <option value="claude-opus-5-5">claude-opus-5-5 (정밀)</option>
+        <option value="claude-haiku-5-5">claude-haiku-5-5 (빠름)</option>
       </select>
-      <p class="hint">키가 없으면 AI 정리 버튼도 키워드 정리로 동작합니다. 키는 console.anthropic.com에서 발급합니다.</p>
+      <p class="hint">키 발급: console.anthropic.com → API Keys. 키가 없으면 버튼이 키워드 정리로 동작합니다.</p>
     </details>
     <div class="status" id="sumStatus"></div>
 
@@ -144,6 +146,8 @@
     <textarea id="t_content" rows="12"></textarea>
     <label>Ⅱ. 향후 추진 일정 (한 줄에 하나)</label>
     <textarea id="t_schedule" rows="5"></textarea>
+    <label>Ⅲ. 산업안전보건법 검토 (한 줄에 하나: 항목 | 근거 조문 | 판정 | 조치사항)</label>
+    <textarea id="t_legal" rows="8"></textarea>
   </div>
 
   <div class="card">
@@ -173,6 +177,10 @@
     <div class="box"><div class="bh" id="p_ctitle"></div><div class="bb" id="p_content"></div></div>
     <div class="sec-title">Ⅱ. 향후 추진 일정</div>
     <div class="box"><div class="bh">향후 주요 일정</div><div class="bb" id="p_schedule"></div></div>
+    <div id="p_legalwrap" style="display:none">
+      <div class="sec-title">Ⅲ. 산업안전보건법 검토</div>
+      <div class="box"><div class="bh">법령 검토 의견</div><div class="bb" id="p_legal"></div></div>
+    </div>
   </div>
 </section>
 </main>
@@ -183,7 +191,7 @@ const store = {
   get(k){ try{return localStorage.getItem(k)}catch(e){return null} },
   set(k,v){ try{localStorage.setItem(k,v)}catch(e){} }
 };
-const FIELDS = ['f_date','f_place','f_people','f_subject','f_purpose','transcript','t_content','t_schedule','apiKey','model'];
+const FIELDS = ['f_date','f_place','f_people','f_subject','f_purpose','transcript','t_content','t_schedule','t_legal','apiKey','model'];
 
 /* ---------- 저장/복원 ---------- */
 function save(){ FIELDS.forEach(f=>store.set('mm_'+f,$(f).value)); }
@@ -216,8 +224,15 @@ function render(){
   ).join('') || '<span class="hint">(자동 정리 후 표시됩니다)</span>';
   $('p_schedule').innerHTML = $('t_schedule').value.split('\n').map(l=>l.trim()).filter(Boolean)
     .map(l=>`<div class="sch">■ ${esc(l.replace(/^[■\-·•]\s*/,''))}</div>`).join('') || '<span class="hint">(자동 정리 후 표시됩니다)</span>';
+  const L=parseLegal($('t_legal').value);
+  $('p_legalwrap').style.display = L.length?'':'none';
+  $('p_legal').innerHTML = L.length ? '<table class="legal"><tr><th style="width:22%">항목</th><th style="width:28%">근거 조문</th><th style="width:13%">판정</th><th>조치사항</th></tr>'+
+    L.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td class="${stClass(r[2])}" style="text-align:center">${esc(r[2])}</td><td>${esc(r[3])}</td></tr>`).join('')+
+    '</table><div class="disc">※ Claude가 국가법령정보센터를 검색해 작성한 참고용 검토이며, 최종 판단은 담당자 확인이 필요합니다.</div>' : '';
   save();
 }
+function parseLegal(t){ return t.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const a=l.split('|').map(x=>x.trim()); while(a.length<4)a.push(''); return a.slice(0,4);}); }
+function stClass(s){ return /적합|이행/.test(s)&&!/부적합/.test(s)?'st-ok':/보완|부적합|미흡|위반/.test(s)?'st-fix':'st-chk'; }
 FIELDS.forEach(f=>$(f).addEventListener('input',render));
 
 /* ---------- 녹음 + 음성인식 ---------- */
@@ -329,42 +344,51 @@ function ruleSummarize(){
 }
 $('btnRule').onclick = ruleSummarize;
 
-/* ---------- AI 정리 (Claude API, 브라우저 직접 호출) ---------- */
+/* ---------- Claude 다듬기 + 산안법 검토 (Anthropic API) ---------- */
 $('btnAI').onclick = async ()=>{
-  const key=$('apiKey').value.trim(), raw=$('transcript').value.trim();
-  if(!raw){ $('sumStatus').textContent='받아쓰기 내용이 없습니다.'; return; }
-  if(!key){ ruleSummarize(); $('sumStatus').textContent='API Key가 없어 키워드 정리로 대신 정리했습니다. 아래 내용을 확인·수정하세요.'; return; }
-  $('sumStatus').textContent='AI가 정리 중…'; $('btnAI').disabled=true;
-  const prompt = `다음은 건설현장 "초기현장 안전관리 지원" 회의의 음성 받아쓰기입니다. 아래 회의록 양식에 맞게 정리하세요.
+  const key=$('apiKey').value.trim(), raw=$('transcript').value.trim(), draft=$('t_content').value.trim();
+  if(!raw && !draft){ $('sumStatus').textContent='받아쓰기 내용이 없습니다.'; return; }
+  if(!key){ ruleSummarize(); $('keyBox').open=true; $('sumStatus').textContent='API Key가 없어 키워드 정리만 했습니다. 법령 검토를 하려면 아래 설정에 키를 넣고 다시 누르세요.'; return; }
+  $('btnAI').disabled=true; $('sumStatus').textContent='Claude가 회의 내용을 다듬고 법령을 검토하는 중…(1~3분)';
+  const prompt = `당신은 건설현장 안전보건 컨설턴트입니다. 아래는 "${$('f_subject').value}" 회의(${$('f_date').value}, ${$('f_place').value})의 받아쓰기${draft?'와 정리 초안':''}입니다.
 
-[양식 규칙]
-- 회의 내용은 분류별로 묶습니다. 가능한 분류: 현장 현황 / 안전보건관리체제 및 문서 / 교육 및 작업허가 / 노사협의체 및 협력사 관리 / 보건 및 시설 / (필요시 기타). 내용 없는 분류는 생략.
-- 각 항목은 한 줄 개조식, 명사형 종결(예: "~ 수립", "~ 완료", "~ 운영", "~ 필요"). 날짜는 'YY.MM.DD 또는 MM/DD 형식. 금액·시간·인원 등 수치는 빠짐없이.
-- 분류당 2~5개 항목, 중복·잡담 제거. 받아쓰기 오인식으로 보이는 단어는 문맥상 맞는 안전보건 용어로 교정.
-- 향후 일정은 "MM/DD : 내용" 또는 "11/18 이전: 내용", "11월 중: 내용" 형식.
-- 참석자 이름/직급이 언급되면 attendees에 "이름 직급" 형태로.
+할 일 1) 회의록 다듬기
+- 분류: 현장 현황 / 안전보건관리체제 및 문서 / 교육 및 작업허가 / 노사협의체 및 협력사 관리 / 보건 및 시설 / (필요시 기타). 내용 없는 분류 생략.
+- 항목은 한 줄 개조식·명사형 종결(예: "~ 수립", "~ 완료", "~ 운영", "~ 필요"), 수치·날짜는 빠짐없이, 잡담·중복 제거, 오인식 용어는 안전보건 용어로 교정. 분류당 2~5개.
+- 향후 일정: "MM/DD : 내용", "11/18 이전: 내용", "11월 중: 내용" 형식.
+- 참석자 이름·직급이 나오면 attendees에 "이름 직급, …".
 
-반드시 아래 JSON만 출력:
-{"attendees":"", "sections":[{"title":"","items":[""]}], "schedule":[""]}
+할 일 2) 산업안전보건법 검토
+- 협의 사항 중 법적 의무와 관련된 것 5~10개를 골라 근거 조문과 이행 상태를 판정.
+- 판정: "적합"(회의상 이행 확인) / "보완 필요"(미이행·기준 미달·기한 임박) / "확인 필요"(판단 불가) 중 하나.
+- 조치사항은 기한·주기·시간·대상을 포함해 구체적으로.
+- web_search 도구로 국가법령정보센터(law.go.kr)의 현행 산업안전보건법·시행령·시행규칙·산업안전보건기준에 관한 규칙을 확인하고 조문을 "산업안전보건법 제29조(근로자에 대한 안전보건교육)"처럼 적으세요. 확인하지 못한 조문은 끝에 "(원문 미확인)".
+
+최종 답은 JSON 하나만:
+{"attendees":"","sections":[{"title":"","items":[""]}],"schedule":[""],"legal":[{"topic":"","basis":"","status":"","action":""}]}
 
 [받아쓰기]
-${raw}`;
+${raw}
+${draft?`\n[정리 초안]\n${draft}`:''}`;
   try{
     const res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:$('model').value,max_tokens:4000,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:$('model').value,max_tokens:8000,
+        tools:[{type:'web_search_20250305',name:'web_search',max_uses:6,allowed_domains:['law.go.kr']}],
+        messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
     if(!res.ok) throw new Error(data.error?data.error.message:res.status);
-    const txt=data.content.map(c=>c.text||'').join('');
+    const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     const j=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
-    $('t_content').value=(j.sections||[]).map(s=>'■ '+s.title+'\n'+s.items.map(i=>'- '+i).join('\n')).join('\n');
-    $('t_schedule').value=(j.schedule||[]).join('\n');
+    if(j.sections&&j.sections.length) $('t_content').value=j.sections.map(s=>'■ '+s.title+'\n'+(s.items||[]).map(i=>'- '+i).join('\n')).join('\n');
+    if(j.schedule) $('t_schedule').value=j.schedule.join('\n');
+    if(j.legal) $('t_legal').value=j.legal.map(r=>[r.topic,r.basis,r.status,r.action].map(x=>String(x||'').replace(/\|/g,'/')).join(' | ')).join('\n');
     if(j.attendees && !$('f_people').value.trim()) $('f_people').value=j.attendees;
-    $('sumStatus').textContent='AI 정리 완료. 아래에서 확인·수정하세요.';
+    $('sumStatus').textContent='완료: 회의 내용 정리 + 법령 검토 '+((j.legal||[]).length)+'건. 확인·수정 후 PPT를 받으세요.';
     render();
-  }catch(e){ $('sumStatus').textContent='AI 정리 실패: '+e.message+' → 키워드 정리를 사용하세요.'; }
+  }catch(e){ $('sumStatus').textContent='Claude 연결 실패: '+e.message+' (키 확인 또는 키워드 정리 사용)'; }
   $('btnAI').disabled=false;
 };
 
@@ -413,32 +437,26 @@ $('btnPPT').onclick = async ()=>{
     {x:X,y,w:W,h:sH,fontFace:F,fontSize:fs,valign:'top',line:{color:LINE,width:0.75},margin:8});
   if(y+sH>11.4) $('expStatus').textContent='내용이 많아 한 장을 넘칠 수 있습니다. 항목을 줄이거나 PPT에서 글자 크기를 조정하세요.';
   else $('expStatus').textContent='PPT 생성 완료.';
+  const L=parseLegal($('t_legal').value);
+  if(L.length){
+    const s2=pptx.addSlide();
+    s2.addText('Ⅲ. 산업안전보건법 검토',{x:X,y:0.5,w:W,h:0.5,fontFace:F,fontSize:18,bold:true});
+    const hc=t=>({text:t,options:{fontFace:F,fontSize:10,bold:true,fill:{color:GRAY},align:'center',valign:'middle',border:{type:'solid',color:LINE,pt:0.75}}});
+    const bc=(t,o={})=>({text:t,options:Object.assign({fontFace:F,fontSize:9,valign:'top',border:{type:'solid',color:LINE,pt:0.75}},o)});
+    const col=s=>stClass(s)==='st-ok'?'1E7B34':stClass(s)==='st-fix'?'C5221F':'B06000';
+    s2.addTable([[hc('항목'),hc('근거 조문'),hc('판정'),hc('조치사항')], ...L.map(r=>[bc(r[0]),bc(r[1]),bc(r[2],{bold:true,align:'center',color:col(r[2])}),bc(r[3])])],
+      {x:X,y:1.1,w:W,colW:[1.5,2.0,0.85,2.72],autoPage:true,autoPageRepeatHeader:true,newSlideStartY:0.6});
+    s2.addText('※ Claude가 국가법령정보센터를 검색해 작성한 참고용 검토이며, 최종 판단은 담당자 확인이 필요합니다.',{x:X,y:11.0,w:W,h:0.3,fontFace:F,fontSize:8,color:'777777'});
+  }
   await pptx.writeFile({fileName:fileBase()+'.pptx'});
 };
 $('btnPDF').onclick = ()=>{ document.title=fileBase(); window.print(); };
 $('btnReset').onclick = ()=>{
   if(!window.confirm('받아쓰기와 정리 내용을 비울까요? (기본정보는 유지)')) return;
-  ['transcript','t_content','t_schedule'].forEach(f=>$(f).value=''); render();
+  ['transcript','t_content','t_schedule','t_legal'].forEach(f=>$(f).value=''); render();
 };
 
 
-/* ---------- Claude 주소로 보내기 ---------- */
-const CLAUDE_URL='https://claude.ai/artifact/Dv2kdwm9qFrFMPQenXABwm';
-$('btnToClaude').onclick = async ()=>{
-  const raw=$('transcript').value.trim();
-  if(!raw){ $('claudeStatus').textContent='받아쓰기 내용이 없습니다.'; return; }
-  const info='[회의정보] '+['f_date','f_place','f_people','f_subject','f_purpose'].map(f=>$(f).value.replace(/\|/g,'/')).join(' | ');
-  const text=info+'\n'+raw;
-  let ok=false;
-  try{ await navigator.clipboard.writeText(text); ok=true; }catch(e){
-    const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select();
-    try{ ok=document.execCommand('copy'); }catch(_){} t.remove();
-  }
-  $('claudeStatus').innerHTML = ok
-    ? '복사 완료 → 열린 Claude 화면의 <b>받아쓰기 칸을 길게 눌러 붙여넣기</b> 후 <b>✨ Claude 다듬기 + 산안법 검토</b>를 누르세요.'
-    : '자동 복사가 안 됐습니다. 받아쓰기 칸 내용을 직접 복사해서 Claude 화면에 붙여넣으세요.';
-  window.open(CLAUDE_URL,'_blank') || (location.href=CLAUDE_URL);
-};
 
 load(); render();
 </script>
