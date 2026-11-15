@@ -122,6 +122,10 @@
       <button id="btnRule" class="primary">키워드 기반 자동정리</button>
       <button id="btnAI">AI 정리</button>
     </div>
+    <div class="btns">
+      <button id="btnToClaude" class="primary" style="background:#c15f3c">✨ Claude로 보내기 (다듬기 + 산안법 검토)</button>
+    </div>
+    <div class="status" id="claudeStatus"></div>
     <details>
       <summary>AI 정리 설정</summary>
       <label>Anthropic API Key (선택 · 이 기기에만 저장)</label>
@@ -415,6 +419,25 @@ $('btnPDF').onclick = ()=>{ document.title=fileBase(); window.print(); };
 $('btnReset').onclick = ()=>{
   if(!window.confirm('받아쓰기와 정리 내용을 비울까요? (기본정보는 유지)')) return;
   ['transcript','t_content','t_schedule'].forEach(f=>$(f).value=''); render();
+};
+
+
+/* ---------- Claude 주소로 보내기 ---------- */
+const CLAUDE_URL='https://claude.ai/artifact/Dv2kdwm9qFrFMPQenXABwm';
+$('btnToClaude').onclick = async ()=>{
+  const raw=$('transcript').value.trim();
+  if(!raw){ $('claudeStatus').textContent='받아쓰기 내용이 없습니다.'; return; }
+  const info='[회의정보] '+['f_date','f_place','f_people','f_subject','f_purpose'].map(f=>$(f).value.replace(/\|/g,'/')).join(' | ');
+  const text=info+'\n'+raw;
+  let ok=false;
+  try{ await navigator.clipboard.writeText(text); ok=true; }catch(e){
+    const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select();
+    try{ ok=document.execCommand('copy'); }catch(_){} t.remove();
+  }
+  $('claudeStatus').innerHTML = ok
+    ? '복사 완료 → 열린 Claude 화면의 <b>받아쓰기 칸을 길게 눌러 붙여넣기</b> 후 <b>✨ Claude 다듬기 + 산안법 검토</b>를 누르세요.'
+    : '자동 복사가 안 됐습니다. 받아쓰기 칸 내용을 직접 복사해서 Claude 화면에 붙여넣으세요.';
+  window.open(CLAUDE_URL,'_blank') || (location.href=CLAUDE_URL);
 };
 
 load(); render();
