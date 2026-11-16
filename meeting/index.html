@@ -23,6 +23,11 @@
     #btnRec,#btnStop{flex:1;padding:16px 8px;font-size:18px;font-weight:700;white-space:nowrap}
     #btnAudio{flex-basis:100%}
   }
+  .upbox{border-top:1px dashed #ccc;margin-top:10px;padding-top:8px}
+  .upbtn{display:inline-block;background:#2e7d32;color:#fff;border-radius:5px;padding:9px 14px;font-size:14px;cursor:pointer;margin:0}
+  .upbtn+.upbtn{background:#5f6368}
+  #asrBar{height:8px;background:#e4e7ec;border-radius:4px;margin-top:8px;overflow:hidden}
+  #asrFill{height:100%;width:0;background:#2e7d32;transition:width .3s}
   .opt{display:flex;align-items:center;gap:6px;font-size:13px;margin-top:8px;color:#444}
   .opt input{width:auto}
   .card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px}
@@ -118,6 +123,20 @@
     <label>받아쓰기 (직접 수정·붙여넣기 가능)</label>
     <textarea id="transcript" placeholder="녹음을 시작하면 여기에 문장이 쌓입니다. 다른 앱(클로바노트 등)에서 받은 텍스트를 붙여넣어도 됩니다."></textarea>
     <div id="interim"></div>
+    <div class="upbox">
+      <div class="btns">
+        <label class="upbtn">🎵 녹음파일 → 글자 변환<input type="file" id="fAudio" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.amr,.3gp,.ogg,.webm" hidden></label>
+        <label class="upbtn">📄 텍스트 파일 불러오기<input type="file" id="fText" accept=".txt,text/plain" hidden></label>
+      </div>
+      <label class="opt">변환 정확도
+        <select id="asrModel" style="width:auto">
+          <option value="Xenova/whisper-small">정확 (small · 처음 약 250MB 다운로드)</option>
+          <option value="Xenova/whisper-base">빠름 (base · 처음 약 80MB 다운로드)</option>
+        </select></label>
+      <div id="asrBar" style="display:none"><div id="asrFill"></div></div>
+      <div class="status" id="asrStatus"></div>
+      <button id="asrCancel" style="display:none">변환 중지</button>
+    </div>
     <p class="hint">※ PC: Chrome/Edge · 안드로이드: Chrome · 아이폰: Safari(설정 → Siri에서 받아쓰기 켜기). 마이크 권한을 허용하세요. 받아쓰기는 인터넷 연결이 필요하며, 녹음 중에는 화면이 꺼지지 않게 유지합니다.</p>
   </div>
 
@@ -457,6 +476,70 @@ $('btnReset').onclick = ()=>{
 };
 
 
+
+/* ---------- 녹음파일 → 글자 변환 (브라우저 내 Whisper) ---------- */
+let asr=null, asrModelId=null, asrStop=false;
+function fmt(s){ s=Math.floor(s); return `[${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}] `; }
+function appendLine(line){ const t=$('transcript'); t.value += (t.value && !t.value.endsWith('\n')?'\n':'') + line; t.scrollTop=t.scrollHeight; save(); }
+async function decodeAudio(file){
+  const buf = await file.arrayBuffer();
+  const Ctx = window.AudioContext||window.webkitAudioContext;
+  const ctx = new Ctx({sampleRate:16000});
+  const audio = await ctx.decodeAudioData(buf);
+  let data;
+  if(audio.numberOfChannels>1){ const a=audio.getChannelData(0), b=audio.getChannelData(1); data=new Float32Array(a.length); for(let i=0;i<a.length;i++) data[i]=(a[i]+b[i])/2; }
+  else data=audio.getChannelData(0);
+  try{ ctx.close(); }catch(e){}
+  return data;
+}
+$('fAudio').onchange = async e=>{
+  const file=e.target.files[0]; e.target.value=''; if(!file) return;
+  const st=$('asrStatus'), bar=$('asrBar'), fill=$('asrFill');
+  asrStop=false; $('asrCancel').style.display=''; bar.style.display=''; fill.style.width='0';
+  try{ if('wakeLock' in navigator) window._wl = await navigator.wakeLock.request('screen'); }catch(_){}
+  try{
+    st.textContent='음성파일 읽는 중… ('+(file.size/1048576).toFixed(1)+'MB)';
+    const audio = await decodeAudio(file);
+    const total = audio.length/16000;
+    const id=$('asrModel').value;
+    if(!asr || asrModelId!==id){
+      st.textContent='음성인식 모델 준비 중… (처음 한 번만 다운로드, 와이파이 권장)';
+      const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+      const files={};
+      asr = await pipeline('automatic-speech-recognition', id, {
+        dtype:'q8', device:'wasm',
+        progress_callback: p=>{ if(p.status==='progress' && p.total){ files[p.file]=[p.loaded,p.total];
+          const L=Object.values(files).reduce((a,b)=>a+b[0],0), T=Object.values(files).reduce((a,b)=>a+b[1],0);
+          st.textContent=`모델 다운로드 ${(L/1048576).toFixed(0)} / ${(T/1048576).toFixed(0)}MB`; fill.style.width=(L/T*100)+'%'; } }
+      });
+      asrModelId=id;
+    }
+    appendLine(`── 녹음파일: ${file.name} (${Math.round(total/60)}분) ──`);
+    const CH=28*16000; const t0=Date.now();
+    for(let off=0, n=0; off<audio.length; off+=CH, n++){
+      if(asrStop){ st.textContent='변환을 중지했습니다. 여기까지 받아쓰기에 들어갔습니다.'; break; }
+      const seg = audio.subarray(off, Math.min(off+CH, audio.length));
+      const out = await asr(seg, {language:'korean', task:'transcribe'});
+      const text=(out.text||'').trim();
+      if(text) appendLine(fmt(off/16000)+text);
+      const done=Math.min(1,(off+CH)/audio.length); fill.style.width=(done*100)+'%';
+      const el=(Date.now()-t0)/1000, left=el/done*(1-done);
+      st.textContent=`변환 중 ${Math.round(done*100)}% · 남은 시간 약 ${Math.ceil(left/60)}분 (화면을 켜 두세요)`;
+      if(off+CH>=audio.length) st.textContent='변환 완료. 아래 3단계에서 정리하세요.';
+    }
+  }catch(err){
+    st.textContent='변환 실패: '+(err&&err.message||err)+' → PC Chrome에서 다시 하거나, 클로바노트 등에서 텍스트로 받아 "텍스트 파일 불러오기"를 쓰세요.';
+  }
+  $('asrCancel').style.display='none';
+  try{ window._wl && window._wl.release(); }catch(_){}
+};
+$('asrCancel').onclick=()=>{ asrStop=true; $('asrStatus').textContent='현재 구간을 마치고 중지합니다…'; };
+$('fText').onchange = async e=>{
+  const file=e.target.files[0]; e.target.value=''; if(!file) return;
+  const txt=(await file.text()).trim();
+  appendLine(`── 텍스트 파일: ${file.name} ──\n`+txt); render();
+  $('asrStatus').textContent='불러왔습니다. 아래 3단계에서 정리하세요.';
+};
 
 load(); render();
 </script>
